@@ -25,13 +25,16 @@ nx = grid_size[0]                           # grid width
 ny = grid_size[1]                           # grid height
 
 # fluid properties
+u0 = 0.3
 physical_properties = {
     'viscosity': 0.002,                 # viscosity
     #'omega': 1./(3*viscosity + 0.5),   # relaxation parameter (a function of viscosity)
     'omega': 0.8,                       # source: me
     'c': 1.0,                           # lattice velocity (currently not used)
-    'u0': .5 * np.array([1.0, 0.0]),    # initial in-flow velocity
+    'u0': .3 * np.array([1.0, 0.0]),    # initial in-flow velocity (in percentage of c)
     #rho_base = 1000                    # base density
+    'dt': 0.001,                           # time step
+    'tau':1.0                           # relaxation time
 }
 
 ## LBM PARAMS (CURRENTLY ONLY FOR D=2)
@@ -52,44 +55,51 @@ if __name__ == '__main__':
     lb = LatticeBoltzmann(D, Q)
     lb.init_physical_properties(physical_properties)
     lb.init_grid(1.0, 1.0, nx, ny)
-    #lb.init_wall([nx-2,ny-2], [nx-1,ny-1])
 
-    ##start first nSeconds iteration (for testing purposes)
-    for i in range(nSeconds):
+    # define boundary conditions
+    bc_dict = {"top":[], "bottom":[], "left":[], "right":[]}
+    bc_dict["left"].append('velocity')
+    bc_dict["left"].append(u0*np.array([.5, 0.0]))
 
-        # time step
-        lb.update()
+    bc_dict["right"].append('velocity')
+    bc_dict["right"].append(u0*np.array([.5, 0.0]))
+
+    bc_dict["top"].append('bounce')
+    bc_dict["top"].append(0)
+
+    bc_dict["bottom"].append('bounce')
+    bc_dict["bottom"].append(0)
+
+    
+    
+    ## init objects as a set of wall cells 
+    # lb.init_wall([0,ny-1], [nx-1,ny-1])
+    # lb.init_wall([0,0], [nx-1,0])
+    # lb.init_wall([nx-2,ny-2], [nx-1,ny-1])
+
+    # ##start first nSeconds iteration (for testing purposes)
+    # for i in range(nSeconds):
+
+    #     ## LBM update
+    #     lb.update(bc_dict)
         
-        # get macro quantities
-        rho = lb.get_rho()
-        u = lb.get_velocity()
-        ke = lb.get_kinetic_energy()
-
-        # boundary conditions
-        # left_velocity_bc(nx, ny, f, u, rho, np.array([0.1, 0.0]))
-        # right_velocity_bc(nx, ny, f, u, rho, np.array([0.0, 0.0]))
-        # kinetic_energy_update(u, kinetic_energy)
+    #     # get macro quantities
+    #     rho = lb.get_rho()
+    #     u = lb.get_velocity()
+    #     ke = lb.get_kinetic_energy()
 
     a = lb.get_kinetic_energy()
     # a = np.zeros(a.shape)
     # a[(nx-1)*ny] = 100
     # a[16] = 100
-    im = plt.imshow(a.reshape(ny,nx), vmin=0.0, vmax=0.05, cmap='viridis')
+    im = plt.imshow(a.reshape(ny,nx), vmin=0.0, cmap='viridis') # vmax=0.05, 
     set_colorbar(im, label="Kinetic Energy")
 
     # Animation function (stream, bounce, collide, and update heatmap)
     def animate_func(i):
         
-        ## LBM update
-        #lb.stream()
-        #lb.bounce()
-        #lb.collide()
-
-        ## Boundary Conditions
-        # left_velocity_bc(nx, ny, f, u, rho, np.array([0.1, 0.0]))
-        # right_velocity_bc(nx, ny, f, u, rho, np.array([0.1, 0.0]))
-        # set_top_velocity_bc(nx, ny, f, u, rho, np.array([0.0, 0.0]))
-        # set_bottom_velocity_bc(nx, ny, f, u, rho, np.array([0.0, 0.0]))
+        # LBM update
+        lb.update(bc_dict)
         
         ## Derived variable update
         a = lb.get_kinetic_energy()
