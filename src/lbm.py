@@ -32,7 +32,7 @@ class LatticeBoltzmann():
 
     # ================= initialize grid quantities ================= #
     def init_physical_properties(self, data: dict):
-        keys = ["viscosity", "omega", "c", "u0"]  # Define necessary keys
+        keys = ["viscosity", "omega", "c", "u0", "dt", "tau"]  # Define necessary keys
         for key in keys:  
             setattr(self, key, data.get(key))
 
@@ -68,8 +68,8 @@ class LatticeBoltzmann():
         @param bb_min := min bounding box, index of grid cells that are walls 
         @param bb_max := max bounding box, index of grid cells that are walls 
         '''
-        for yi in range(bb_min[1], bb_max[1]):
-            for xi in range(bb_min[0], bb_max[0]):
+        for yi in range(bb_min[1], bb_max[1]+1):
+            for xi in range(bb_min[0], bb_max[0]+1):
                 isInsideX = (xi < self.nx-1) & (xi > -1) 
                 isInsideY = (yi < self.ny-1) & (yi > -1)
                 if (isInsideX & isInsideY):
@@ -77,48 +77,68 @@ class LatticeBoltzmann():
 
 
     # ================= update ================= #
-    def update(self):
+    def update(self, bc_dict):
         update = Update(self)
         update.stream()
         update.bounce()
+        # apply boundary conditions
+        for loc, vals in bc_dict.items():
+            self.boundary_condition(loc, vals[0], vals[1])
         update.collide()
 
+
+        # update.stream()
+        # update.bounce()
+        # update.collide()
+
     # ================= boundary conditions ================= # 
-    def boundary_condition(self, type, location, val):
+    def boundary_condition(self, location, type, val):
         bc = BoundaryCondition(self)
         if (type=='velocity'):
             if (location=='left'):
-                bc.left_velocity_bc(val)
+                bc.velocity_left_bc(val)
             elif (location=='right'):
-                bc.right_velocity_bc(val)
+                bc.velocity_right_bc(val)
             elif (location=='top'):
-                bc.top_velocity_bc(val)
+                bc.velocity_top_bc(val)
             elif (location=='bottom'):
-                bc.bottom_velocity_bc(val)
+                bc.velocity_bottom_bc(val)
             else :
                 print("BC location not found", file=sys.stderr)     
         elif (type=='pressure'):
             if (location=='left'):
-                bc.left_pressure_bc(val)
+                bc.pressure_left_bc(val)
             # elif (location=='right'):
-            #     bc.right_pressure_bc(val)
+            #     bc.pressure_right_bc(val)
             # elif (location=='top'):
-            #     bc.top_pressure_bc(val)
+            #     bc.pressure_top_bc(val)
             # elif (location=='bottom'):
-            #     bc.bottom_pressure_bc(val)
+            #     bc.pressure_bottom_bc(val)
             else :
-                print("BC location not found", file=sys.stderr)     
+                print("BC location not found", file=sys.stderr)
+        elif (type=='bounce'):
+            if (location=='left'):
+                bc.bounce_back_left_bc()
+            elif (location=='right'):
+                bc.bounce_back_right_bc()
+            elif (location=='top'):
+                bc.bounce_back_top_bc()
+            elif (location=='bottom'):
+                bc.bounce_back_bottom_bc()
+            else :
+                print("BC location not found", file=sys.stderr)
         else: # set velocity BC 
             if (location=='left'):
-                bc.set_left_velocity(val)
+                bc.set_velocity_left_bc(val)
             elif (location=='right'):
-                bc.set_right_velocity(val)
+                bc.set_velocity_right_bc(val)
             elif (location=='top'):
-                bc.set_top_velocity(val)
+                bc.set_velocity_top_bc(val)
             elif (location=='bottom'):
-                bc.set_bottom_velocity(val)
+                bc.set_velocity_bottom_bc(val)
             else :
-                print("BC location not found", file=sys.stderr)     
+                print("BC location not found", file=sys.stderr) 
+ 
 
     # ================= get output quantities ================= # 
     def get_rho(self):
