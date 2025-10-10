@@ -11,182 +11,281 @@ class BoundaryCondition():
         
     # ==================== PRESSURE BCs (zou he) ==================== #
     ### left pressure BC
-    # def left_pressure_bc(self, u_bc):
+    def pressure_left_bc(self, val):
+        """
+        Pressure Boundary condition for left boundary
 
-    #     first_bc_cell = self.lb.nx
-    #     last_bc_cell = (self.lb.ny-2)*self.lb.nx + first_bc_cell
-    #     bc_cells = np.arange(first_bc_cell, last_bc_cell, self.lb.nx)
+        :param list val: [rho, u[1]]
+        :return: None
+        """
 
-        # self.lb.rho[lx,:] = rho_right[:]
-        # self.lb.u[1,lx,:] = u_right[1,:]
+        bc_cells = (slice(1,self.lb.ny-1),0)
 
-        # self.lb.u[0,lx,:] = (g[0,lx,:] + g[3,lx,:] + g[4,lx,:] +
-        #              2.0*g[1,lx,:] + 2.0*g[5,lx,:] +
-        #              2.0*g[8,lx,:])/self.lb.rho[lx,:] - 1.0
+        self.lb.rho[bc_cells] = val[0]
+        self.lb.u[bc_cells, 1] = val[1]
 
-        # g[2,lx,:] = (g[1,lx,:] - cst1*self.lb.rho[lx,:]*self.lb.u[0,lx,:])
+        self.lb.u[bc_cells][:,0] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,3] + self.lb.f[bc_cells][:,4] +
+                     2.0*self.lb.f[bc_cells][:,1] + 2.0*self.lb.f[bc_cells][:,5] +
+                     2.0*self.lb.f[bc_cells][:,8])/self.lb.rho[bc_cells] - 1.0
 
-        # g[6,lx,:] = (g[5,lx,:] + cst3*(g[3,lx,:] - g[4,lx,:]) -
-        #              cst2*self.lb.rho[lx,:]*self.lb.u[0,lx,:] -
-        #              cst3*self.lb.rho[lx,:]*self.lb.u[1,lx,:] )
+        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
 
-        # g[7,lx,:] = (g[8,lx,:] - cst3*(g[3,lx,:] - g[4,lx,:]) -
-        #              cst2*self.lb.rho[lx,:]*self.lb.u[0,lx,:] +
-        #              cst3*self.lb.rho[lx,:]*self.lb.u[1,lx,:] )
+        self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,5] + c3*(self.lb.f[bc_cells][:,3] - self.lb.f[bc_cells][:,4]) -
+                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
+                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+
+        self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,8] - c3*(self.lb.f[bc_cells][:,3] - self.lb.f[bc_cells][:,4]) -
+                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
+                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
 
 
     # ==================== VELOCITY BCs (zou he) ==================== #
     ### left velocity BC
-    def left_velocity_bc(self, u_bc):
+    def velocity_left_bc(self, u_bc):
+        """
+        Velocity boundary condition for left boundary
 
-        first_bc_cell = self.lb.nx
-        last_bc_cell = (self.lb.ny-2)*self.lb.nx + first_bc_cell
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, self.lb.nx)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
 
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        bc_cells = (slice(1,self.lb.ny-1),0)
 
-        self.lb.rho[bc_cells] = (self.lb.f[bc_cells,0] + self.lb.f[bc_cells,2] + self.lb.f[bc_cells,4] 
-                        + 2.0*self.lb.f[bc_cells,3] + 2.0*self.lb.f[bc_cells,7] 
-                        + 2.0*self.lb.f[bc_cells,6])/(1.0 - self.lb.u[bc_cells,0])
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
+
+        self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,2] + self.lb.f[bc_cells][:,4] 
+                        + 2.0*self.lb.f[bc_cells][:,3] + 2.0*self.lb.f[bc_cells][:,7] 
+                        + 2.0*self.lb.f[bc_cells][:,6])/(1.0 - self.lb.u[bc_cells][:,0])
         
-        self.lb.f[bc_cells,1] = (self.lb.f[bc_cells,3] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0])
+        self.lb.f[bc_cells][:,1] = (self.lb.f[bc_cells][:,3] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
 
-        self.lb.f[bc_cells,5] = (self.lb.f[bc_cells,7] 
-                        - c3*(self.lb.f[bc_cells,2] - self.lb.f[bc_cells,4]) 
-                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] 
-                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1])
+        self.lb.f[bc_cells][:,5] = (self.lb.f[bc_cells][:,7] 
+                        - c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
+                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
+                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
 
-        self.lb.f[bc_cells,8] = (self.lb.f[bc_cells,6] 
-                        + c3*(self.lb.f[bc_cells,2] - self.lb.f[bc_cells,4]) 
-                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] 
-                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1])
+        self.lb.f[bc_cells][:,8] = (self.lb.f[bc_cells][:,6] 
+                        + c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
+                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
+                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
         
         
     ### right velocity BC
-    def right_velocity_bc(self, u_bc):
+    def velocity_right_bc(self, u_bc):
+        """
+        Velocity boundary condition for right boundary
 
-        first_bc_cell = 2*self.lb.nx-1
-        last_bc_cell = (self.lb.ny-2)*self.lb.nx + first_bc_cell
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, self.lb.nx)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
+
+        bc_cells = (range(1,self.lb.ny-1), self.lb.nx-1)
         
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.rho[bc_cells] = (self.lb.f[bc_cells,0] + self.lb.f[bc_cells,2] + self.lb.f[bc_cells,4] 
-                        + 2.0*self.lb.f[bc_cells,1] + 2.0*self.lb.f[bc_cells,5] 
-                        + 2.0*self.lb.f[bc_cells,8])/(1.0 + self.lb.u[bc_cells,0])
+        self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,2] + self.lb.f[bc_cells][:,4] 
+                        + 2.0*self.lb.f[bc_cells][:,1] + 2.0*self.lb.f[bc_cells][:,5] 
+                        + 2.0*self.lb.f[bc_cells][:,8])/(1.0 + self.lb.u[bc_cells][:,0])
 
-        self.lb.f[bc_cells,3] = (self.lb.f[bc_cells,1] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0])
+        self.lb.f[bc_cells][:,3] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
 
-        self.lb.f[bc_cells,7] = (self.lb.f[bc_cells,5] 
-                        + c3*(self.lb.f[bc_cells,2] - self.lb.f[bc_cells,4]) 
-                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] 
-                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,5] 
+                        + c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
+                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
+                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
 
-        self.lb.f[bc_cells,6] = (self.lb.f[bc_cells,8] 
-                        - c3*(self.lb.f[bc_cells,2] - self.lb.f[bc_cells,4]) 
-                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] 
-                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,8] 
+                        - c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
+                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
+                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
         
 
     ### top velocity BC
-    def top_velocity_bc(self, u_bc):
+    def velocity_top_bc(self, u_bc):
+        """
+        Velocity boundary condition for top boundary
 
-        first_bc_cell = (self.lb.ny-1)*self.lb.nx 
-        last_bc_cell = first_bc_cell + (self.lb.nx-2)
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, 1)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
 
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        bc_cells = (self.lb.ny-1, slice(1, self.lb.nx-1) )
 
-        self.lb.rho[bc_cells] = (self.lb.f[bc_cells,0] + self.lb.f[bc_cells,1] + self.lb.f[bc_cells,3] +
-                    2.0*self.lb.f[bc_cells,2] + 2.0*self.lb.f[bc_cells,5] +
-                    2.0*self.lb.f[bc_cells,6])/(1.0 + self.lb.u[bc_cells,1])
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.f[bc_cells,4] = (self.lb.f[bc_cells,2] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1])
+        self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,1] + self.lb.f[bc_cells][:,3] +
+                    2.0*self.lb.f[bc_cells][:,2] + 2.0*self.lb.f[bc_cells][:,5] +
+                    2.0*self.lb.f[bc_cells][:,6])/(1.0 + self.lb.u[bc_cells][:,1])
 
-        self.lb.f[bc_cells,8] = (self.lb.f[bc_cells,6] - c3*(self.lb.f[bc_cells,1] - self.lb.f[bc_cells,3]) +
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] -
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,4] = (self.lb.f[bc_cells][:,2] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
 
-        self.lb.f[bc_cells,7] = (self.lb.f[bc_cells,5] + c3*(self.lb.f[bc_cells,1] - self.lb.f[bc_cells,3]) -
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] -
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,8] = (self.lb.f[bc_cells][:,6] - c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) +
+                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
+                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+
+        self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,5] + c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) -
+                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
+                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
 
     ### bottom velocity BC
-    def bottom_velocity_bc(self, u_bc):
+    def velocity_bottom_bc(self, u_bc):
+        """
+        Velocity boundary condition for bottom boundary
 
-        first_bc_cell = 1
-        last_bc_cell = first_bc_cell + (self.lb.nx-2)
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, 1)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
 
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        bc_cells = (1, slice(1, self.lb.nx-1))
 
-        self.lb.rho[bc_cells] = (self.lb.f[bc_cells,0] + self.lb.f[bc_cells,1] + self.lb.f[bc_cells,3] +
-                    2.0*self.lb.f[bc_cells,4] + 2.0*self.lb.f[bc_cells,7] +
-                    2.0*self.lb.f[bc_cells,8] )/(1.0 - self.lb.u[bc_cells,1])
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.f[bc_cells,2] = (self.lb.f[bc_cells,4] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1])
+        self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,1] + self.lb.f[bc_cells][:,3] +
+                    2.0*self.lb.f[bc_cells][:,4] + 2.0*self.lb.f[bc_cells][:,7] +
+                    2.0*self.lb.f[bc_cells][:,8] )/(1.0 - self.lb.u[bc_cells][:,1])
 
-        self.lb.f[bc_cells,5] = (self.lb.f[bc_cells,7] - c3*(self.lb.f[bc_cells,1] - self.lb.f[bc_cells,3]) +
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] +
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,4] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
 
-        self.lb.f[bc_cells,6] = (self.lb.f[bc_cells,8] + c3*(self.lb.f[bc_cells,1] - self.lb.f[bc_cells,3]) -
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells,0] +
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells,1] )
+        self.lb.f[bc_cells][:,5] = (self.lb.f[bc_cells][:,7] - c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) +
+                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
+                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+
+        self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,8] + c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) -
+                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
+                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
         
+    ### ==================== Bounce-Back BC ==================== #####    
 
+    def bounce_back_left_bc(self):
+
+        xi = 0
+
+        for yi in range(0,self.lb.ny):
+            self.lb.f[yi, xi+1, 1] = self.lb.f[yi, xi, 3]
+            if (yi<self.lb.ny-1):
+                self.lb.f[yi+1, xi+1, 5] = self.lb.f[yi, xi, 7]
+            if (yi>0):
+                self.lb.f[yi-1, xi+1, 8] = self.lb.f[yi, xi, 6]
+
+            # clear f in wall
+            for fi in range(9):
+                self.lb.f[yi, xi, fi] = 0  
+
+    def bounce_back_right_bc(self):
+
+        xi = self.lb.nx-1
+
+        for yi in range(0,self.lb.ny):
+            self.lb.f[yi, xi-1, 3] = self.lb.f[yi, xi, 1]
+            if (yi>0):
+                self.lb.f[yi-1, xi-1, 7] = self.lb.f[yi, xi, 5]
+            if (yi<self.lb.ny-1):
+                self.lb.f[yi+1, xi-1, 6] = self.lb.f[yi, xi, 8]
+
+            # clear f in wall
+            for fi in range(9):
+                self.lb.f[yi, xi, fi] = 0  
+
+    def bounce_back_top_bc(self):
+
+        yi = self.lb.ny-1
+
+        for xi in range(0, self.lb.nx):
+            self.lb.f[yi-1, xi, 4] = self.lb.f[yi, xi, 2]
+            if (xi>0) :
+                self.lb.f[yi-1, xi-1, 7] = self.lb.f[yi, xi, 5]
+            if (xi<self.lb.nx-1):
+                self.lb.f[yi-1, xi+1, 8] = self.lb.f[yi, xi, 6]
+
+            # clear f in wall
+            for fi in range(9):
+                self.lb.f[yi, xi, fi] = 0   
+
+    def bounce_back_bottom_bc(self):
+
+        yi = 0
+
+        for xi in range(0, self.lb.nx):
+            self.lb.f[yi+1, xi, 2] = self.lb.f[yi, xi, 4]
+            if (xi<self.lb.nx-1) :
+                self.lb.f[yi+1, xi+1, 5] = self.lb.f[yi, xi, 7]
+            if (xi>0) :
+                self.lb.f[yi+1, xi-1, 6] = self.lb.f[yi, xi, 8]
+
+            # clear f in wall
+            for fi in range(9):
+                self.lb.f[yi, xi, fi] = 0  
+      
+        
     ### ==================== Set Velocity BC ==================== #####
-    def set_left_velocity(self, u_bc):
-        first_bc_cell = self.lb.nx
-        last_bc_cell = (self.lb.ny-2)*self.lb.nx + first_bc_cell
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, self.lb.nx)
+    def set_velocity_left_bc(self, u_bc):
+        """
+        Set Velocity and f at left boundary
 
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
 
-        self.lb.f[bc_cells,3] = 0.0
-        self.lb.f[bc_cells,7] = 0.0
-        self.lb.f[bc_cells,6] = 0.0
+        bc_cells = (slice(1,self.lb.ny-1),0)
 
-    def set_right_velocity(self, u_bc):
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        first_bc_cell = 2*self.lb.nx-1
-        last_bc_cell = (self.lb.ny-2)*self.lb.nx + first_bc_cell
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, self.lb.nx)
+        self.lb.f[bc_cells][:,3] = 0.0
+        self.lb.f[bc_cells][:,7] = 0.0
+        self.lb.f[bc_cells][:,6] = 0.0
+
+    def set_velocity_right_bc(self, u_bc):
+        """
+        Set Velocity and f at right boundary
+
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
+
+        bc_cells = (slice(1,self.lb.ny-1), self.lb.nx-1)
         
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.f[bc_cells,3] = 0.0
-        self.lb.f[bc_cells,7] = 0.0
-        self.lb.f[bc_cells,6] = 0.0
+        self.lb.f[bc_cells][:,3] = 0.0
+        self.lb.f[bc_cells][:,7] = 0.0
+        self.lb.f[bc_cells][:,6] = 0.0
 
-    def set_top_velocity(self, u_bc):
+    def set_velocity_top_bc(self, u_bc):
+        """
+        Set Velocity and f at top boundary
 
-        first_bc_cell = (self.lb.ny-1)*self.lb.nx 
-        last_bc_cell = first_bc_cell + (self.lb.nx-2)
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, 1)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
+
+        bc_cells = (self.lb.ny-1, slice(1, self.lb.nx-1) )
         
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.f[bc_cells,4] = 0.0
-        self.lb.f[bc_cells,7] = 0.0
-        self.lb.f[bc_cells,8] = 0.0
+        self.lb.f[bc_cells][:,4] = 0.0
+        self.lb.f[bc_cells][:,7] = 0.0
+        self.lb.f[bc_cells][:,8] = 0.0
 
-    def set_bottom_velocity(self, u_bc):
+    def set_velocity_bottom_bc(self, u_bc):
+        """
+        Set Velocity and f at bottom boundary
 
-        first_bc_cell = 1
-        last_bc_cell = first_bc_cell + (self.lb.nx-2)
-        bc_cells = np.arange(first_bc_cell, last_bc_cell, 1)
+        :param list val: [u[0], u[1]]
+        :return: None
+        """
+
+        bc_cells = (1, slice(1, self.lb.nx-1))
         
-        self.lb.u[bc_cells,0] = u_bc[0]
-        self.lb.u[bc_cells,1] = u_bc[1]
+        self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.u[bc_cells][:,1] = u_bc[1]
 
-        self.lb.f[bc_cells,2] = 0.0
-        self.lb.f[bc_cells,5] = 0.0
-        self.lb.f[bc_cells,6] = 0.0
+        self.lb.f[bc_cells][:,2] = 0.0
+        self.lb.f[bc_cells][:,5] = 0.0
+        self.lb.f[bc_cells][:,6] = 0.0
