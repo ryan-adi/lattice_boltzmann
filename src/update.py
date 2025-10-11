@@ -1,4 +1,4 @@
-import numpy as np
+from common_modules import np
 
 class Update():
     def __init__(self, lb):

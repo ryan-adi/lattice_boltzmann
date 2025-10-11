@@ -1,5 +1,4 @@
-import numpy as np
-import sys
+from common_modules import np, sys
 
 from .update import Update
 from .boundary_condition import BoundaryCondition
@@ -82,8 +81,9 @@ class LatticeBoltzmann():
         update.stream()
         update.bounce()
         # apply boundary conditions
-        for loc, vals in bc_dict.items():
-            self.boundary_condition(loc, vals[0], vals[1])
+        if (bc_dict):
+            for loc, vals in bc_dict.items():
+                self.boundary_condition(loc, vals[0], vals[1])
         update.collide()
 
 

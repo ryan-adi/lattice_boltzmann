@@ -1,4 +1,3 @@
-import numpy as np
 
 ## constants
 c1 = 2.0/3.0

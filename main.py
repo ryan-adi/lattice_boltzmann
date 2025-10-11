@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib import rc
+from common_modules import np, plt, cm, subprocess
 
 from src.lbm import *
 from src.boundary_condition import * 
+from src.visualize import *
 
 plt.rcParams["figure.figsize"] = (50,3)
 plt.rcParams.update({
@@ -17,7 +16,10 @@ plt.rcParams.update({
 
 # simulation settings
 fps = 20
-nSeconds = 5
+dt = 0.001
+tSim = 0.1
+nt = int(tSim / dt)
+case_name = "channel2D"
 
 # Geometry
 grid_size = np.array([32, 5])               # grid dimensions
@@ -31,9 +33,9 @@ physical_properties = {
     #'omega': 1./(3*viscosity + 0.5),   # relaxation parameter (a function of viscosity)
     'omega': 0.8,                       # source: me
     'c': 1.0,                           # lattice velocity (currently not used)
-    'u0': .3 * np.array([1.0, 0.0]),    # initial in-flow velocity (in percentage of c)
+    'u0': .0 * np.array([1.0, 0.0]),    # initial in-flow velocity (in percentage of c)
     #rho_base = 1000                    # base density
-    'dt': 0.001,                           # time step
+    'dt': dt,                           # time step
     'tau':1.0                           # relaxation time
 }
 
@@ -41,15 +43,11 @@ physical_properties = {
 D = 2
 Q = 9
 
-def set_colorbar(im, label):
-    cbar = plt.colorbar(im)
-    plt.gca().invert_yaxis()
-    cbar.set_label(label, rotation=270)
 
 if __name__ == '__main__':
-    
-    # First set up the figure, the axis, and the plot element we want to animate
-    fig = plt.figure(figsize=(20,5))
+
+    # create png output folder   
+    create_output_folder(case_name)
 
     # initialize LatticeBoltzmann
     lb = LatticeBoltzmann(D, Q)
@@ -69,66 +67,35 @@ if __name__ == '__main__':
 
     bc_dict["bottom"].append('bounce')
     bc_dict["bottom"].append(0)
-
-    
     
     ## init objects as a set of wall cells 
     # lb.init_wall([0,ny-1], [nx-1,ny-1])
     # lb.init_wall([0,0], [nx-1,0])
     # lb.init_wall([nx-2,ny-2], [nx-1,ny-1])
 
-    # ##start first nSeconds iteration (for testing purposes)
-    # for i in range(nSeconds):
+    ## simulation loop
+    for ti in range(nt):
 
-    #     ## LBM update
-    #     lb.update(bc_dict)
-        
-    #     # get macro quantities
-    #     rho = lb.get_rho()
-    #     u = lb.get_velocity()
-    #     ke = lb.get_kinetic_energy()
-
-    a = lb.get_kinetic_energy()
-    # a = np.zeros(a.shape)
-    # a[(nx-1)*ny] = 100
-    # a[16] = 100
-    im = plt.imshow(a.reshape(ny,nx), vmin=0.0, cmap='viridis') # vmax=0.05, 
-    set_colorbar(im, label="Kinetic Energy")
-
-    # Animation function (stream, bounce, collide, and update heatmap)
-    def animate_func(i):
-        
         # LBM update
         lb.update(bc_dict)
         
-        ## Derived variable update
-        a = lb.get_kinetic_energy()
+        # get macro quantities (for debugging)
+        rho = lb.get_rho()
+        u = lb.get_velocity()
+        ke = lb.get_kinetic_energy()
 
-        ## plot settings
-        im.set_data(a.reshape(ny, nx))
-        plt.xlabel("x coordinate")
-        plt.ylabel("y coordinate")
+        # save pngs 
+        ds = {
+            # "Density":lb.get_rho(), 
+            #   "Velocity":lb.get_velocity(),
+              "Kinetic Energy":lb.get_kinetic_energy()
+              }
+    
+        # output visualization
+        save_pngs(case_name, current_iter=ti, ds=ds)
 
-        return [im]
 
-    # Animation object
-    anim = animation.FuncAnimation(
-                                fig, 
-                                animate_func, 
-                                frames = nSeconds * fps,
-                                interval = 1000 / fps, # in ms
-                                )
+    ## generate videos from pngs
+    generate_video(case_name, ds=ds, fps=20, save_pngs=True)
 
-    print('Done with calculations!')
-
-    # Generate an mp4 video of the animation
-    print("Generate video")
-    vid_type = "gif"
-    if (vid_type=="mp4"):
-        file_name = r"./animation4.mp4" 
-    # writervideo = animation.FFMpegWriter(fps=fps) 
-    else:
-        file_name = r"./animation4.gif" 
-        writervideo = animation.PillowWriter(fps=600)
-    anim.save(file_name, writer=writervideo)
-    print("Done generating video")
+    print("LBM simulation complete in ")
