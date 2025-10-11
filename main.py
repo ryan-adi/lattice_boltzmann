@@ -1,8 +1,8 @@
-from common_modules import np, plt, cm, subprocess
+from common_modules import np, plt, time
 
 from src.lbm import *
 from src.boundary_condition import * 
-from src.visualize import *
+from src.postprocessing import *
 
 plt.rcParams["figure.figsize"] = (50,3)
 plt.rcParams.update({
@@ -22,19 +22,19 @@ nt = int(tSim / dt)
 case_name = "channel2D"
 
 # Geometry
-grid_size = np.array([32, 5])               # grid dimensions
+grid_size = np.array([64, 16])               # grid dimensions
 nx = grid_size[0]                           # grid width
 ny = grid_size[1]                           # grid height
 
 # fluid properties
 u0 = 0.3
-physical_properties = {
+lbm_properties = {
     'viscosity': 0.002,                 # viscosity
     #'omega': 1./(3*viscosity + 0.5),   # relaxation parameter (a function of viscosity)
     'omega': 0.8,                       # source: me
     'c': 1.0,                           # lattice velocity (currently not used)
     'u0': .0 * np.array([1.0, 0.0]),    # initial in-flow velocity (in percentage of c)
-    #rho_base = 1000                    # base density
+    'rho': 1.0,                         # base density
     'dt': dt,                           # time step
     'tau':1.0                           # relaxation time
 }
@@ -46,27 +46,31 @@ Q = 9
 
 if __name__ == '__main__':
 
+    start = time.time()
+
     # create png output folder   
     create_output_folder(case_name)
 
     # initialize LatticeBoltzmann
     lb = LatticeBoltzmann(D, Q)
-    lb.init_physical_properties(physical_properties)
-    lb.init_grid(1.0, 1.0, nx, ny)
+    lb.init_quantities(lbm_properties)
+    lb.init_grid(lx=1.0, ly=1.0, nx=nx, ny=ny)
 
     # define boundary conditions
     bc_dict = {"top":[], "bottom":[], "left":[], "right":[]}
     bc_dict["left"].append('velocity')
     bc_dict["left"].append(u0*np.array([.5, 0.0]))
+    # bc_dict["left"].append('pressure')
+    # bc_dict["left"].append(np.array([1.0, 0]))
 
     bc_dict["right"].append('velocity')
     bc_dict["right"].append(u0*np.array([.5, 0.0]))
 
-    bc_dict["top"].append('bounce')
-    bc_dict["top"].append(0)
+    # bc_dict["top"].append('bounce')
+    # bc_dict["top"].append(0)
 
-    bc_dict["bottom"].append('bounce')
-    bc_dict["bottom"].append(0)
+    # bc_dict["bottom"].append('bounce')
+    # bc_dict["bottom"].append(0)
     
     ## init objects as a set of wall cells 
     # lb.init_wall([0,ny-1], [nx-1,ny-1])
@@ -74,28 +78,32 @@ if __name__ == '__main__':
     # lb.init_wall([nx-2,ny-2], [nx-1,ny-1])
 
     ## simulation loop
-    for ti in range(nt):
+    for ti in range(nt+1):
 
-        # LBM update
-        lb.update(bc_dict)
-        
-        # get macro quantities (for debugging)
+        # get macro quantities
         rho = lb.get_rho()
-        u = lb.get_velocity()
+        ux = lb.get_velocity()[:,:,0]
+        uy = lb.get_velocity()[:,:,1]
         ke = lb.get_kinetic_energy()
 
         # save pngs 
         ds = {
-            # "Density":lb.get_rho(), 
-            #   "Velocity":lb.get_velocity(),
-              "Kinetic Energy":lb.get_kinetic_energy()
+            # "Density":rho, 
+              "Velocity X":ux,
+              "Velocity Y":uy,
+              "Kinetic Energy":ke
               }
     
         # output visualization
         save_pngs(case_name, current_iter=ti, ds=ds)
+        save_csvs(case_name, current_iter=ti, ds=ds)
+
+        # LBM update
+        lb.update(bc_dict)
 
 
     ## generate videos from pngs
-    generate_video(case_name, ds=ds, fps=20, save_pngs=True)
+    generate_video(case_name, ds=ds, fps=20, remove_pngs=False)
 
-    print("LBM simulation complete in ")
+    end = time.time()
+    print(f"LBM simulation complete in {end-start} s")
