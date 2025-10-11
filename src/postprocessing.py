@@ -54,8 +54,8 @@ def save_pngs(case_name, current_iter, ds:dict):
     
     os.chdir(case_pngs)
     # create pngs for all variables in ds
-    fig, ax = plt.subplots(figsize=(20,5))
     for var, data in ds.items():
+        fig, ax = plt.subplots(figsize=(20,5))
 
         im = plt.imshow(data, vmin=0.0, vmax=0.05, cmap='viridis') #  
         set_colorbar(im, label=var)
@@ -68,9 +68,10 @@ def save_pngs(case_name, current_iter, ds:dict):
         os.chdir(var_name)
 
         fig.savefig(png_name)
-        plt.close()
-
+        
         os.chdir("..")
+
+        plt.close()
 
     # go to directory where main is
     os.chdir(main_dir)
@@ -88,8 +89,6 @@ def generate_video(case_name:str, ds:dict, fps=20, remove_pngs=True):
         video_name= case_name + "_" + var_name + ".mp4"
         png_name = "t%06d_" + var_name + ".png"
 
-        if not os.path.exists(var_name):
-            os.mkdir(var_name)
         os.chdir(var_name)
 
         # call ffmpeg

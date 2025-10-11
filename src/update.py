@@ -8,7 +8,7 @@ class Update():
         f = self.lb.f
         
         # Stream all internal cells
-        n_offset = 0 # TODO
+        n_offset = 0
         for yi in range(n_offset, self.lb.ny-n_offset):
             for xi in range(n_offset, self.lb.nx-n_offset):
 
@@ -57,7 +57,7 @@ class Update():
 
                     for qi in range(1,9):
                         f_eq = w_[qi] * (1 + 3 * np.dot(u[yi,xi,:], e_[qi]) + 4.5 * (np.dot(u[yi,xi,:], e_[qi]))**2 - 1.5 * np.dot(u[yi,xi,:], u[yi,xi,:]))
-                        self.lb.f[yi, xi, qi] =  (1-omega) * f[yi, xi, qi] + omega * f_eq
+                        #self.lb.f[yi, xi, qi] =  (1-omega) * f[yi, xi, qi] + omega * f_eq
                         self.lb.f[yi, xi, qi] =  (1-dt/tau) * f[yi, xi, qi] + (dt/tau) * f_eq
                     
                     # Conserve mass

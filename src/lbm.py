@@ -30,8 +30,8 @@ class LatticeBoltzmann():
         self.w_ = w_  
 
     # ================= initialize grid quantities ================= #
-    def init_physical_properties(self, data: dict):
-        keys = ["viscosity", "omega", "c", "u0", "dt", "tau"]  # Define necessary keys
+    def init_quantities(self, data: dict):
+        keys = ["viscosity", "omega", "c", "u0", "rho", "dt", "tau"]  # Define necessary keys
         for key in keys:  
             setattr(self, key, data.get(key))
 
@@ -83,7 +83,8 @@ class LatticeBoltzmann():
         # apply boundary conditions
         if (bc_dict):
             for loc, vals in bc_dict.items():
-                self.boundary_condition(loc, vals[0], vals[1])
+                if (vals):
+                    self.boundary_condition(loc, vals[0], vals[1])
         update.collide()
 
 

@@ -21,7 +21,7 @@ class BoundaryCondition():
         bc_cells = (slice(1,self.lb.ny-1),0)
 
         self.lb.rho[bc_cells] = val[0]
-        self.lb.u[bc_cells, 1] = val[1]
+        self.lb.u[bc_cells][:,1] = val[1]
 
         self.lb.u[bc_cells][:,0] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,3] + self.lb.f[bc_cells][:,4] +
                      2.0*self.lb.f[bc_cells][:,1] + 2.0*self.lb.f[bc_cells][:,5] +
@@ -79,7 +79,7 @@ class BoundaryCondition():
         :return: None
         """
 
-        bc_cells = (range(1,self.lb.ny-1), self.lb.nx-1)
+        bc_cells = (slice(1,self.lb.ny-1), 1) #self.lb.nx-1)
         
         self.lb.u[bc_cells][:,0] = u_bc[0]
         self.lb.u[bc_cells][:,1] = u_bc[1]
