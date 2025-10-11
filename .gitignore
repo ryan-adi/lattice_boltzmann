@@ -3,6 +3,7 @@ Literature/
 __pycache__/
 _archive/
 _educational_examples/
+output/
 
 # visualization
 *.gif
