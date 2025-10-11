@@ -1,4 +1,4 @@
-from common_modules import plt, os, subprocess, glob, shutil, imageio
+from common_modules import plt, os, subprocess, glob, shutil
 
 def set_colorbar(im, label):
     cbar = plt.colorbar(im)
