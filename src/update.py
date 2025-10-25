@@ -1,88 +1,73 @@
-from common_modules import np
+from common_modules import np, nb
 
-class Update():
-    def __init__(self, lb):
-        self.lb = lb
 
-    def stream(self):
-        f = self.lb.f
+#@nb.jit
+def stream(f):
+    ny, nx, q = f.shape
+    out = f
         
-        # Stream all internal cells
-        n_offset = 0
-        for yi in range(n_offset, self.lb.ny-n_offset):
-            for xi in range(n_offset, self.lb.nx-n_offset):
+    # n_offset = 1
+    # for yi in range(n_offset, ny-n_offset):
+    #         for xi in range(n_offset, nx-n_offset):
+    #             for k in range(1,q):
+    #                 if (k<5):
+    #                     direction = 0.5*(k-1)*np.pi
+    #                 else:
+    #                     direction = (0.5*(k-5)+0.25)*np.pi
 
-                self.lb.f[yi, xi, 1] = f[yi, xi-1, 1]
-                self.lb.f[yi, xi, 2] = f[yi-1, xi, 2]
-                self.lb.f[yi, xi-1, 3] = f[yi, xi, 3]
-                self.lb.f[yi-1, xi, 4] = f[yi, xi, 4]
-                self.lb.f[yi, xi, 5] = f[yi-1, xi-1, 5]
-                self.lb.f[yi, xi-1, 6] = f[yi-1, xi, 6]
-                self.lb.f[yi-1, xi-1, 7] = f[yi, xi, 7]
-                self.lb.f[yi-1, xi, 8] = f[yi, xi-1, 8]
+    #                 x0 = int(np.round(xi-np.cos(direction)))
+    #                 y0 = int(np.round(yi-np.sin(direction)))
+
+    #                 out[yi,xi,k] = f[y0, x0 ,k]
+
+    # out[:,1:nx,1] = f[:,0:nx-1,1]
+    # out[1:ny,:,2] = f[0:ny-1,:,2]
+    # out[:,0:nx-1,3] = f[:,1:nx,3]
+    # out[0:ny-1,:,4] = f[1:ny,:,4]
+    # out[1:ny,1:nx,5] = f[0:ny-1,0:nx-1,5]
+    # out[1:ny,0:nx-1,6] = f[0:ny-1,1:nx,6]
+    # out[0:ny-1,0:nx-1,7] = f[1:ny,1:nx,7]
+    # out[0:ny-1,1:nx,8] = f[1:ny,0:nx-1,8]
+
+    e_ = np.array([np.array([0.0, 0.0]),
+                            np.array([1.0, 0.0]),np.array([0.0, 1.0]),
+                            np.array([-1.0, 0.0]),np.array([0.0, -1.0]),
+                            np.array([1.0, 1.0]),np.array([-1.0, 1.0]),
+                            np.array([-1.0, -1.0]),np.array([1.0, -1.0])])
+    # streaming
+    for i, ei in zip(range(9), e_):
+        cx, cy = ei[0], ei[1]
+        out[:,:,i] = np.roll(out[:,:,i], cx, axis=1)
+        out[:,:,i] = np.roll(out[:,:,i], cy, axis=0)
+
+    return out
+
+
+#@nb.jit 
+def bounce(f, wall):
+    ny, nx, _ = f.shape
+    f_new = f
+
+    n_offset = 2 
+    for yi in range(n_offset, ny-n_offset):
+        for xi in range(n_offset, nx-n_offset):
+            
+            # If the cell is a wall cell
+            if (wall[yi, xi]):
                 
-        # Tidy up the edges (TODO)
-        # xi = self.lb.nx
-        # for yi in range(1, self.lb.ny-1):
-        #     self.lb.f[yi, xi, 2] = f[yi-1, xi, 2]
-        #     self.lb.f[yi-1, xi, 4] = f[yi, xi, 4]
-
-
-    def collide(self):
-        # create copy of commonly used variables 
-        omega = self.lb.omega
-        w_ = self.lb.w_
-        e_ = self.lb.e_
-        u = self.lb.u
-        dt = self.lb.dt
-        tau = self.lb.tau
-
-        # store original f field
-        f = self.lb.f
-
-        n_offset = 1
-        for yi in range(n_offset, self.lb.ny-n_offset):
-            for xi in range(n_offset, self.lb.nx-n_offset):
-                                
-                # Skip over cells containing barriers
-                if (self.lb.wall[yi, xi]):
-                    continue
-                else:
-                    # Compute the macroscopic density
-                    self.lb.rho[yi, xi] = np.sum(self.lb.f[yi,xi,:])
-
-                    # Compute the macroscopic velocities
-                    if (self.lb.rho[yi,xi] > 0):
-                        self.lb.u[yi,xi,:] = np.dot(self.lb.f[yi,xi,1:], e_[1:]) * (1-(self.lb.rho[yi,xi]-1)+((self.lb.rho[yi,xi]-1)**2))
-
-                    for qi in range(1,9):
-                        f_eq = w_[qi] * (1 + 3 * np.dot(u[yi,xi,:], e_[qi]) + 4.5 * (np.dot(u[yi,xi,:], e_[qi]))**2 - 1.5 * np.dot(u[yi,xi,:], u[yi,xi,:]))
-                        #self.lb.f[yi, xi, qi] =  (1-omega) * f[yi, xi, qi] + omega * f_eq
-                        self.lb.f[yi, xi, qi] =  (1-dt/tau) * f[yi, xi, qi] + (dt/tau) * f_eq
-                    
-                    # Conserve mass
-                    self.lb.f[yi, xi, 0]  = self.lb.rho[yi, xi] - np.sum(f[yi, xi, 1:])
-
-
-    def bounce(self):
-
-        n_offset = 2 
-        for yi in range(n_offset, self.lb.ny-n_offset):
-            for xi in range(n_offset, self.lb.nx-n_offset):
+                # bounce back
+                f_new[yi+1, xi, 2] = f[yi, xi, 4]
+                f_new[yi-1, xi, 4] = f[yi, xi, 2]
+                f_new[yi, xi+1, 1] = f[yi, xi, 3]
+                f_new[yi, xi-1, 3] = f[yi, xi, 1]
+                f_new[yi+1, xi+1, 5] = f[yi, xi, 7]
+                f_new[yi+1, xi-1, 6] = f[yi, xi, 8]
+                f_new[yi-1, xi+1, 8] = f[yi, xi, 6]
+                f_new[yi-1, xi-1, 7] = f[yi, xi, 5]
                 
-                # If the cell contains a wall
-                if (self.lb.wall[yi, xi]):
-                    
-                    # bounce back
-                    self.lb.f[yi+1, xi, 2] = self.lb.f[yi, xi, 4]
-                    self.lb.f[yi-1, xi, 4] = self.lb.f[yi, xi, 2]
-                    self.lb.f[yi, xi+1, 1] = self.lb.f[yi, xi, 3]
-                    self.lb.f[yi, xi-1, 3] = self.lb.f[yi, xi, 1]
-                    self.lb.f[yi+1, xi+1, 5] = self.lb.f[yi, xi, 7]
-                    self.lb.f[yi+1, xi-1, 6] = self.lb.f[yi, xi, 8]
-                    self.lb.f[yi-1, xi+1, 8] = self.lb.f[yi, xi, 6]
-                    self.lb.f[yi-1, xi-1, 7] = self.lb.f[yi, xi, 5]
-                    
-                    # clear f in wall
-                    for fi in range(9):
-                        self.lb.f[yi, xi, fi] = 0
+                # clear f in wall
+                f_new[yi, xi, :] = 0
+
+    return f_new
+
+    

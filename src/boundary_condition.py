@@ -1,3 +1,4 @@
+from common_modules import np
 
 ## constants
 c1 = 2.0/3.0
@@ -48,9 +49,16 @@ class BoundaryCondition():
         :return: None
         """
 
-        bc_cells = (slice(1,self.lb.ny-1),0)
+        ny = self.lb.ny
 
-        self.lb.u[bc_cells][:,0] = u_bc[0]
+        bc_cells = (slice(1,ny-1),0)
+
+        #self.lb.u[bc_cells][:,0] = u_bc[0]
+        # if poiseuille
+        for j in range(1, ny-1):
+            v_poi = u_bc[0] * (1- ((j-ny/2)/(ny-2))**2)
+            self.lb.u[j,0,0] = v_poi
+
         self.lb.u[bc_cells][:,1] = u_bc[1]
 
         self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,2] + self.lb.f[bc_cells][:,4] 
@@ -68,8 +76,8 @@ class BoundaryCondition():
                         + c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
                         + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
                         - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
-        
-        
+
+           
     ### right velocity BC
     def velocity_right_bc(self, u_bc):
         """
@@ -79,7 +87,7 @@ class BoundaryCondition():
         :return: None
         """
 
-        bc_cells = (slice(1,self.lb.ny-1), 1) #self.lb.nx-1)
+        bc_cells = (slice(1,self.lb.ny-1), self.lb.nx-1)
         
         self.lb.u[bc_cells][:,0] = u_bc[0]
         self.lb.u[bc_cells][:,1] = u_bc[1]
@@ -100,7 +108,6 @@ class BoundaryCondition():
                         - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
                         + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
         
-
     ### top velocity BC
     def velocity_top_bc(self, u_bc):
         """
@@ -110,7 +117,7 @@ class BoundaryCondition():
         :return: None
         """
 
-        bc_cells = (self.lb.ny-1, slice(1, self.lb.nx-1) )
+        bc_cells = (self.lb.ny-1, slice(1, self.lb.nx-1))
 
         self.lb.u[bc_cells][:,0] = u_bc[0]
         self.lb.u[bc_cells][:,1] = u_bc[1]
@@ -138,7 +145,7 @@ class BoundaryCondition():
         :return: None
         """
 
-        bc_cells = (1, slice(1, self.lb.nx-1))
+        bc_cells = (0, slice(1, self.lb.nx-1))
 
         self.lb.u[bc_cells][:,0] = u_bc[0]
         self.lb.u[bc_cells][:,1] = u_bc[1]
@@ -157,8 +164,9 @@ class BoundaryCondition():
                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
         
-    ### ==================== Bounce-Back BC ==================== #####    
 
+    ### ==================== Bounce-Back BC ==================== #####    
+    ## my version
     def bounce_back_left_bc(self):
 
         xi = 0
@@ -171,8 +179,7 @@ class BoundaryCondition():
                 self.lb.f[yi-1, xi+1, 8] = self.lb.f[yi, xi, 6]
 
             # clear f in wall
-            for fi in range(9):
-                self.lb.f[yi, xi, fi] = 0  
+            self.lb.f[yi, xi, :] = 0  
 
     def bounce_back_right_bc(self):
 
@@ -186,8 +193,7 @@ class BoundaryCondition():
                 self.lb.f[yi+1, xi-1, 6] = self.lb.f[yi, xi, 8]
 
             # clear f in wall
-            for fi in range(9):
-                self.lb.f[yi, xi, fi] = 0  
+            self.lb.f[yi, xi, :] = 0  
 
     def bounce_back_top_bc(self):
 
@@ -201,8 +207,7 @@ class BoundaryCondition():
                 self.lb.f[yi-1, xi+1, 8] = self.lb.f[yi, xi, 6]
 
             # clear f in wall
-            for fi in range(9):
-                self.lb.f[yi, xi, fi] = 0   
+            self.lb.f[yi, xi, :] = 0   
 
     def bounce_back_bottom_bc(self):
 
@@ -216,9 +221,96 @@ class BoundaryCondition():
                 self.lb.f[yi+1, xi-1, 6] = self.lb.f[yi, xi, 8]
 
             # clear f in wall
-            for fi in range(9):
-                self.lb.f[yi, xi, fi] = 0  
-      
+            self.lb.f[yi, xi, :] = 0  
+
+    ### =================== CORNER BCs========================= ###
+    def no_slip(self):
+        ## TODO: directionss might not be correcrt
+
+        # parameters
+        nx = self.lb.nx
+        ny = self.lb.ny
+
+        # bottom left
+        self.lb.u[0,0,0] = self.lb.u[0,1,0]
+        self.lb.u[0,0,1] = self.lb.u[0,1,1]
+        self.lb.rho[0,0] = self.lb.rho[0,1]
+
+        self.lb.f[0,0,1] = (self.lb.f[0,0,3] + c1*self.lb.rho[0,0]*self.lb.u[0,0,0])
+
+        self.lb.f[0,0,2] = (self.lb.f[0,0,4] + c1*self.lb.rho[0,0]*self.lb.u[1,0,0])
+
+        self.lb.f[0,0,5] = (self.lb.f[0,0,7] + c2*self.lb.rho[0,0]*self.lb.u[0,0,0]
+                            + c2*self.lb.rho[0,0]*self.lb.u[1,0,0])
+
+        self.lb.f[0,0,6] = 0.0
+        self.lb.f[0,0,8] = 0.0
+
+        self.lb.f[0,0,0] = (self.lb.rho[0,0]
+                    - np.sum(self.lb.f[0,0,1:8]))
+        
+        # top left
+        self.lb.u[ny-1,0,0] = self.lb.u[ny-1,1,0]
+        self.lb.u[ny-1,0,1] = self.lb.u[ny-1,1,1]
+
+        self.lb.rho[ny-1,0] = self.lb.rho[ny-1,1]
+
+        self.lb.f[ny-1,0,1] = (self.lb.f[ny-1,0,2] + c1*self.lb.rho[ny-1,0]*self.lb.u[ny-1,0,0])
+
+        self.lb.f[ny-1,0,4] = (self.lb.f[ny-1,0,3] - c1*self.lb.rho[ny-1,0]*self.lb.u[ny-1,0,1])
+
+        self.lb.f[ny-1,0,8] = (self.lb.f[ny-1,0,7] + c2*self.lb.rho[ny-1,0]*self.lb.u[ny-1,0,0]
+                            - c2*self.lb.rho[ny-1,0]*self.lb.u[ny-1,0,1])
+
+
+        self.lb.f[ny-1,0,5] = 0.0
+        self.lb.f[ny-1,0,6] = 0.0
+
+        self.lb.f[ny-1,0,0] = (self.lb.rho[ny-1,0]
+                    - self.lb.f[ny-1,0,1] - self.lb.f[ny-1,0,2] - self.lb.f[ny-1,0,3] - self.lb.f[ny-1,0,4]
+                    - self.lb.f[ny-1,0,5] - self.lb.f[ny-1,0,6] - self.lb.f[ny-1,0,7] - self.lb.f[ny-1,0,8] )
+        
+
+        # top right
+        self.lb.u[ny-1,nx-1,0] = self.lb.u[ny-1,nx-2,0]
+        self.lb.u[ny-1,nx-1,1] = self.lb.u[ny-1,nx-2,1]
+
+        self.lb.rho[ny-1,nx-1] = self.lb.rho[ny-1,nx-2]
+
+        self.lb.f[ny-1,nx-1,2] = (self.lb.f[ny-1,nx-1,1] - c1*self.lb.rho[ny-1,nx-1]*self.lb.u[ny-1,nx-1,0])
+
+        self.lb.f[ny-1,nx-1,4] = (self.lb.f[ny-1,nx-1,3] - c1*self.lb.rho[ny-1,nx-1]*self.lb.u[ny-1,nx-1,1])
+
+        self.lb.f[ny-1,nx-1,6] = (self.lb.f[ny-1,nx-1,5] - c2*self.lb.rho[ny-1,nx-1]*self.lb.u[ny-1,nx-1,0]
+                                - c2*self.lb.rho[ny-1,nx-1]*self.lb.u[ny-1,nx-1,1])
+
+        self.lb.f[ny-1,nx-1,7] = 0.0
+        self.lb.f[ny-1,nx-1,8] = 0.0
+
+        self.lb.f[ny-1,nx-1,0] = (self.lb.rho[ny-1,nx-1]
+                    - self.lb.f[ny-1,nx-1,1] - self.lb.f[ny-1,nx-1,2] - self.lb.f[ny-1,nx-1,3] - self.lb.f[ny-1,nx-1,4]
+                    - self.lb.f[ny-1,nx-1,5] - self.lb.f[ny-1,nx-1,6] - self.lb.f[ny-1,nx-1,7] - self.lb.f[ny-1,nx-1,8] )
+        
+        # bottom right
+        self.lb.u[0,nx-1,0] = self.lb.u[0,nx-2,0]
+        self.lb.u[0,nx-1,1] = self.lb.u[0,nx-2,1]
+
+        self.lb.rho[0,ny-1] = self.lb.rho[0,ny-2]
+
+        self.lb.f[0,nx-1,2] = (self.lb.f[0,nx-1,1] - c1*self.lb.rho[0,ny-1]*self.lb.u[0,nx-1,0])
+
+        self.lb.f[0,nx-1,3] = (self.lb.f[0,nx-1,4] + c1*self.lb.rho[0,ny-1]*self.lb.u[0,nx-1,1])
+
+        self.lb.f[0,nx-1,7] = (self.lb.f[0,nx-1,8] - c2*self.lb.rho[0,ny-1]*self.lb.u[0,nx-1,0]
+                            + c2*self.lb.rho[0,ny-1]*self.lb.u[0,nx-1,1])
+
+        self.lb.f[0,nx-1,5] = 0.0
+        self.lb.f[0,nx-1,6] = 0.0
+
+        self.lb.f[0,nx-1,0] = (self.lb.rho[0,ny-1]
+                    - self.lb.f[0,nx-1,1] - self.lb.f[0,nx-1,2] - self.lb.f[0,nx-1,3] - self.lb.f[0,nx-1,4]
+                    - self.lb.f[0,nx-1,5] - self.lb.f[0,nx-1,6] - self.lb.f[0,nx-1,7] - self.lb.f[0,nx-1,8] )
+
         
     ### ==================== Set Velocity BC ==================== #####
     def set_velocity_left_bc(self, u_bc):

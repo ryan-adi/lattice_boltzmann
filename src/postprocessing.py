@@ -1,5 +1,16 @@
 from common_modules import plt, os, subprocess, glob, shutil, np
 
+# plot settings
+plt.rcParams["figure.figsize"] = (50,3)
+plt.rcParams.update({
+    'axes.labelsize': 14,      # Font size for axis labels
+    'axes.titlesize': 16,      # Font size for axis titles
+    'xtick.labelsize': 12,     # Font size for x-axis ticks
+    'ytick.labelsize': 12,     # Font size for y-axis ticks
+    #'font.family': 'serif',    # Font family (default is 'sans-serif')
+    'font.size': 12,           # General font size for text in the plot
+})
+
 def set_colorbar(im, label):
     cbar = plt.colorbar(im)
     plt.gca().invert_yaxis()
@@ -22,6 +33,7 @@ def save_csvs(case_name, current_iter, ds:dict):
     # define main directory
     main_dir = os.getcwd()
     case_csvs = os.path.join("output", case_name, "csvs")
+
     
     os.chdir(case_csvs)
     # create csvs for all variables in ds
@@ -34,6 +46,9 @@ def save_csvs(case_name, current_iter, ds:dict):
             os.mkdir(var_name)
         os.chdir(var_name)
         
+        # flip data to in y-axis
+        data = np.flip(data,0) 
+
         # filter out zero entries
         data[data < 1e-6] = 0
 
@@ -57,7 +72,7 @@ def save_pngs(case_name, current_iter, ds:dict):
     for var, data in ds.items():
         fig, ax = plt.subplots(figsize=(20,5))
 
-        im = plt.imshow(data, vmin=0.0, vmax=0.05, cmap='viridis') #  
+        im = plt.imshow(data, vmin=0.0, cmap='viridis')  #vmax=np.max(data),
         set_colorbar(im, label=var)
 
         var_name = ''.join([c for c in var if c.isupper()])
