@@ -14,7 +14,7 @@ plt.rcParams.update({
 def set_colorbar(im, label):
     cbar = plt.colorbar(im)
     plt.gca().invert_yaxis()
-    cbar.set_label(label, rotation=270)
+    cbar.set_label(label, fontweight='bold', labelpad=35, rotation=270)
 
 def create_output_folder(case_name):
     case_pngs = os.path.join("output", case_name, "pngs")
@@ -28,7 +28,7 @@ def create_output_folder(case_name):
     os.makedirs(case_pngs)
     os.makedirs(case_csvs)
 
-def save_csvs(case_name, current_iter, ds:dict):
+def save_csvs(case_name, current_time, export_iter, ds:dict):
      
     # define main directory
     main_dir = os.getcwd()
@@ -40,7 +40,7 @@ def save_csvs(case_name, current_iter, ds:dict):
     for var, data in ds.items():
 
         var_name = ''.join([c for c in var if c.isupper()])
-        csv_name = f"t{current_iter:06d}_{var_name}.csv" 
+        csv_name = f"t{export_iter:06d}_{var_name}.csv" 
 
         if not os.path.exists(var_name):
             os.mkdir(var_name)
@@ -50,18 +50,17 @@ def save_csvs(case_name, current_iter, ds:dict):
         data = np.flip(data,0) 
 
         # filter out zero entries
-        data[data < 1e-6] = 0
+        # if (data.min() >= 0.0):
+        #     data[data < 1e-6] = 0.0
 
         np.savetxt(csv_name, data, delimiter=",", fmt="%.3e")
 
         os.chdir("..")
 
-
-
     # go to directory where main is
     os.chdir(main_dir)
 
-def save_pngs(case_name, current_iter, ds:dict):
+def save_pngs(case_name, current_time, export_iter, ds:dict):
     
     # define main directory
     main_dir = os.getcwd()
@@ -71,12 +70,23 @@ def save_pngs(case_name, current_iter, ds:dict):
     # create pngs for all variables in ds
     for var, data in ds.items():
         fig, ax = plt.subplots(figsize=(20,5))
+        ax.set_xlabel("x Coordinates")
+        ax.set_ylabel("y Coordinates")
+        timestamp = f"t={current_time:.1f} s"
+        ax.text(0.0, 1.1, timestamp, 
+                fontsize=23, fontweight='bold',
+                bbox=dict(facecolor='red', alpha=0.5), 
+                transform=ax.transAxes)
 
-        im = plt.imshow(data, vmin=0.0, cmap='viridis')  #vmax=np.max(data),
+        # value_min = 0.0
+        # if (data.min()<0.0):
+        #     value_min = data.min()
+        
+        im = plt.imshow(data, cmap='viridis')  #vmax=np.max(data),
         set_colorbar(im, label=var)
 
         var_name = ''.join([c for c in var if c.isupper()])
-        png_name = f"t{current_iter:06d}_{var_name}.png" 
+        png_name = f"t{export_iter:06d}_{var_name}.png" 
 
         if not os.path.exists(var_name):
             os.mkdir(var_name)
@@ -91,7 +101,7 @@ def save_pngs(case_name, current_iter, ds:dict):
     # go to directory where main is
     os.chdir(main_dir)
 
-def generate_video(case_name:str, ds:dict, fps=20, remove_pngs=True):
+def generate_video(case_name:str, ds:dict, fps:int, remove_pngs=True):
     # define pngs folder
     main_dir = os.getcwd()
     case_pngs = os.path.join("output", case_name, "pngs")
@@ -102,13 +112,13 @@ def generate_video(case_name:str, ds:dict, fps=20, remove_pngs=True):
         # file names
         var_name = ''.join([c for c in var if c.isupper()])
         video_name= case_name + "_" + var_name + ".mp4"
-        png_name = "t%06d_" + var_name + ".png"
+        png_name = "t%06d_"+ var_name +".png" 
 
         os.chdir(var_name)
 
         # call ffmpeg
         fps = str(fps)
-        subprocess.call([
+        subprocess.run([
             'ffmpeg.exe', '-framerate', fps, 
             '-i', png_name, 
             '-r', '30', 

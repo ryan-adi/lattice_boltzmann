@@ -50,12 +50,14 @@ class BoundaryCondition():
         """
 
         ny = self.lb.ny
+        ny0 = 0
+        ny1 = ny
 
-        bc_cells = (slice(1,ny-1),0)
+        bc_cells = (slice(ny0, ny1),0)
 
-        #self.lb.u[bc_cells][:,0] = u_bc[0]
+        # self.lb.u[bc_cells][:,0] = u_bc[0]
         # if poiseuille
-        for j in range(1, ny-1):
+        for j in range(ny0, ny1):
             v_poi = u_bc[0] * (1- ((j-ny/2)/(ny-2))**2)
             self.lb.u[j,0,0] = v_poi
 
@@ -313,7 +315,7 @@ class BoundaryCondition():
 
         
     ### ==================== Set Velocity BC ==================== #####
-    def set_velocity_left_bc(self, u_bc):
+    def set_left_bc(self, u_bc):
         """
         Set Velocity and f at left boundary
 
@@ -323,14 +325,14 @@ class BoundaryCondition():
 
         bc_cells = (slice(1,self.lb.ny-1),0)
 
-        self.lb.u[bc_cells][:,0] = u_bc[0]
-        self.lb.u[bc_cells][:,1] = u_bc[1]
+        # self.lb.u[bc_cells][:,0] = u_bc[0]
+        # self.lb.u[bc_cells][:,1] = u_bc[1]
 
         self.lb.f[bc_cells][:,3] = 0.0
         self.lb.f[bc_cells][:,7] = 0.0
         self.lb.f[bc_cells][:,6] = 0.0
 
-    def set_velocity_right_bc(self, u_bc):
+    def set_right_bc(self, u_bc):
         """
         Set Velocity and f at right boundary
 
@@ -347,7 +349,7 @@ class BoundaryCondition():
         self.lb.f[bc_cells][:,7] = 0.0
         self.lb.f[bc_cells][:,6] = 0.0
 
-    def set_velocity_top_bc(self, u_bc):
+    def set_top_bc(self, u_bc):
         """
         Set Velocity and f at top boundary
 
@@ -364,7 +366,7 @@ class BoundaryCondition():
         self.lb.f[bc_cells][:,7] = 0.0
         self.lb.f[bc_cells][:,8] = 0.0
 
-    def set_velocity_bottom_bc(self, u_bc):
+    def set_bottom_bc(self, u_bc):
         """
         Set Velocity and f at bottom boundary
 

@@ -5,7 +5,7 @@ from .boundary_condition import BoundaryCondition
 
 class LatticeBoltzmann():
     def __init__(self, D, Q):
-        # initialize
+        # dimension
         configuration = [[1,3], [2,9], [3,27]]
         self.D = D
         self.Q = Q
@@ -26,58 +26,14 @@ class LatticeBoltzmann():
         else:
             print("Error: D and Q configuration not found", file=sys.stderr)
 
+        # weights and directions
         self.e_ = e_
         self.w_ = w_
 
-    # ================= initialize grid quantities ================= #
-    def init_quantities(self, data: dict):
-        keys = ["viscosity", "omega", "c", "u0", "rho", "dt", "tau"]  # Define necessary keys
-        for key in keys:
-            setattr(self, key, data.get(key))
-
-    def init_grid(self, lx, ly, nx ,ny):
-        self.lx = lx  # length in x
-        self.ly = ly  # length in y
-        self.nx = nx  # number of cells in x
-        self.ny = ny  # number of cells in y
-        self.wall = np.zeros((ny, nx)) # wall cells in grid
-
-        # define quantities
-        self.f = np.ones((ny, nx, self.Q))
-
-        # Macroscopic density and velocity
-        self.rho = np.ones((ny, nx))    # density
-        self.u = np.zeros((ny, nx, self.D))   # velocity
-
-        for yi in range(self.ny):
-            for xi in range(self.nx):
-
-                # init equilibrium distribution
-                for qi in range(self.Q):
-                    self.f[yi, xi, qi] = self.w_[qi] * (
-                        1 + 3 * np.dot(self.u0, self.e_[qi]) + 4.5 * (np.dot(self.u0, self.e_[qi]))**2 - 1.5 * np.dot(self.u0, self.u0))
-
-                # macroscopic values
-                self.rho[yi, xi] = np.sum(self.f[yi, xi,:])
-                self.u[yi,xi,:] = np.dot(self.f[yi,xi,1:], self.e_[1:]) * (1-(self.rho[yi,xi]-1)+((self.rho[yi,xi]-1)**2))
-
-    def init_wall(self, bb_min: list[int], bb_max: list[int]):
-        '''
-        Initialize wall cells depending on bounding box definition
-        @param bb_min := min bounding box, index of grid cells that are walls
-        @param bb_max := max bounding box, index of grid cells that are walls
-        '''
-        for yi in range(bb_min[1], bb_max[1]+1):
-            for xi in range(bb_min[0], bb_max[0]+1):
-                isInsideX = (xi < self.nx-1) & (xi > -1)
-                isInsideY = (yi < self.ny-1) & (yi > -1)
-                if (isInsideX & isInsideY):
-                    self.wall[yi, xi] = 1
-
-
+    
     # ================= update ================= #
     def update(self, bc_dict):
-        self.f = stream(self.f)
+        self.f = stream(self.f, self.e_)
         self.f = bounce(self.f, self.wall)
 
         # apply boundary conditions
@@ -91,7 +47,6 @@ class LatticeBoltzmann():
 
     def collide(self):
         # create copy of commonly used variables
-        omega = self.omega
         w_ = self.w_
         e_ = self.e_
         u = self.u
@@ -105,51 +60,20 @@ class LatticeBoltzmann():
         # store original f field
         f = self.f
 
-        if (False):
-            # calc macro quantities
-            rho = np.sum(f, 2)
-            ux = np.sum(f*cxs, 2) / rho
-            uy = np.sum(f*cys, 2) / rho
+        # calc macro quantities
+        self.rho = np.sum(f, 2)
+        # ux = np.sum(f*cxs, 2) / self.rho
+        # uy = np.sum(f*cys, 2) / self.rho
+        u = np.einsum("ijk,kl->ijl", f, e_) / self.rho[...,np.newaxis]
+        self.u = u
 
-            f_eq = np.zeros(f.shape)
-            for i, ei, wi in zip(range(9), e_, w_):
-                cx, cy = ei[0], ei[1]
-                # ux = self.u[:,:,0]
-                # uy = self.u[:,:,1]
-                f_eq[:,:,i] = self.rho * wi * (1 + 3 * (cx*ux + cy*uy) 
-                                        + (3 * (cx*ux + cy*uy))**2 /2
-                                        - 3 * (ux**2+uy**2)/2)
-            self.f +=  - dt/tau * (self.f - f_eq)
-
-            # store in self
-            self.rho = rho
-            self.u[:,:,0] = ux
-            self.u[:,:,1] = uy
-
-        if (True):
-            n_offset = 1
-            for yi in range(n_offset, self.ny-n_offset):
-                for xi in range(n_offset, self.nx-n_offset):
-
-                    # Skip over cells containing barriers
-                    if (self.wall[yi, xi]):
-                        continue
-                    else:
-                    
-                        # Compute the macroscopic density
-                        self.rho[yi, xi] = np.sum(self.f[yi,xi,:])
-
-                        # Compute the macroscopic velocities
-                        if (self.rho[yi,xi] > 0):
-                            self.u[yi,xi,:] = np.dot(self.f[yi,xi,1:], e_[1:]) * (1-(self.rho[yi,xi]-1)+((self.rho[yi,xi]-1)**2))
-
-                        # Compute f
-                        for qi in range(1,9):
-                            # corresponds to cs=0.577
-                            f_eq = w_[qi] * (1 + 3 * np.dot(u[yi,xi,:], e_[qi]) + 4.5 * (np.dot(u[yi,xi,:], e_[qi]))**2
-                                             - 1.5 * np.dot(u[yi,xi,:], u[yi,xi,:]))
-                            self.f[yi, xi, qi] =  (1-dt/tau) * f[yi, xi, qi] + (dt/tau) * f_eq
-                        self.f[yi, xi, 0]  = self.rho[yi, xi] - np.sum(f[yi, xi, 1:])
+        f_eq = np.zeros(f.shape)
+        for i, ei, wi in zip(range(9), e_, w_):
+            cx, cy = ei[0], ei[1]
+            f_eq[:,:,i] = wi * self.rho * (1 + 3 * (cx*u[:,:,0] + cy*u[:,:,1]) 
+                                    + (3 * (cx*u[:,:,0] + cy*u[:,:,1]))**2 /2
+                                    - 3 * (u[:,:,0]**2+u[:,:,1]**2)/2)
+        self.f +=  - dt/tau * (self.f - f_eq)
 
     # ================= boundary conditions ================= #
     def boundary_condition(self, location, type, val):
