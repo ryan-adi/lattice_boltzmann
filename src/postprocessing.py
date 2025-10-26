@@ -78,11 +78,21 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
                 bbox=dict(facecolor='red', alpha=0.5), 
                 transform=ax.transAxes)
 
-        # value_min = 0.0
-        # if (data.min()<0.0):
-        #     value_min = data.min()
-        
-        im = plt.imshow(data, cmap='viridis')  #vmax=np.max(data),
+        value_min = value_max = 0.0
+        if (var=="Density"):
+            value_min = 0.9
+            value_max = 1.1
+        if (var=="Velocity X"):
+            value_min = 0.0
+            value_max = 0.3
+        if (var=="Velocity y"):
+            value_min = -0.3
+            value_max = 0.3
+        if (var=="Kinetic Energy"):
+            value_min = 0.0
+            value_max = 0.1
+
+        im = plt.imshow(data,  vmin=value_min, vmax=value_max, cmap='viridis')
         set_colorbar(im, label=var)
 
         var_name = ''.join([c for c in var if c.isupper()])

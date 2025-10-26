@@ -33,8 +33,15 @@ class LatticeBoltzmann():
     
     # ================= update ================= #
     def update(self, bc_dict):
-        self.f = stream(self.f, self.e_)
-        self.f = bounce(self.f, self.wall)
+
+        # absorbing boundary condition
+        # self.f[:,-1,[3,6,7]] = self.f[:,-2,[3,6,7]] # right
+        # self.f[:,0,[1,5,8]] = self.f[:,1,[1,5,8]]  # left
+        # self.f[-1,:,[4,7,8]] = self.f[-2,:,[4,7,8]] # top
+        # self.f[0,:,[2,5,6]] = self.f[1,:,[2,5,6]] # bottom
+
+        stream(self.f, self.e_)
+        bounce(self.f, self.wall)
 
         # apply boundary conditions
         if (bc_dict):
@@ -53,17 +60,11 @@ class LatticeBoltzmann():
         dt = self.dt
         tau = self.tau
 
-        # make cxs and cys
-        cxs = e_[:,0]
-        cys = e_[:,1]
-
         # store original f field
         f = self.f
 
         # calc macro quantities
         self.rho = np.sum(f, 2)
-        # ux = np.sum(f*cxs, 2) / self.rho
-        # uy = np.sum(f*cys, 2) / self.rho
         u = np.einsum("ijk,kl->ijl", f, e_) / self.rho[...,np.newaxis]
         self.u = u
 
@@ -101,34 +102,31 @@ class LatticeBoltzmann():
             #     bc.pressure_bottom_bc(val)
             else :
                 print("BC location not found", file=sys.stderr)
-        elif (type=='bounce'):
+        elif (type=='set'): # set micro velocity BC
             if (location=='left'):
-                bc.bounce_back_left_bc()
+                bc.set_left_bc(val)
             elif (location=='right'):
-                bc.bounce_back_right_bc()
+                bc.set_right_bc(val)
             elif (location=='top'):
-                bc.bounce_back_top_bc()
+                bc.set_top_bc(val)
             elif (location=='bottom'):
-                bc.bounce_back_bottom_bc()
+                bc.set_bottom_bc(val)
             else :
                 print("BC location not found", file=sys.stderr)
-        else: # set velocity BC
+        elif (type=='absorb'): # set absorbing BC
             if (location=='left'):
-                bc.set_velocity_left_bc(val)
+                bc.absorb_left_bc()
             elif (location=='right'):
-                bc.set_velocity_right_bc(val)
+                bc.absorb_right_bc()
             elif (location=='top'):
-                bc.set_velocity_top_bc(val)
+                bc.absorb_top_bc()
             elif (location=='bottom'):
-                bc.set_velocity_bottom_bc(val)
+                bc.absorb_bottom_bc()
             else :
                 print("BC location not found", file=sys.stderr)
-
-        ## for corners
-        # bc.no_slip()
+        else:
+            print("Boundary condition not defined")
         
-
-
     # ================= get macro quantities ================= #
     def get_rho(self):
         return self.rho
@@ -138,3 +136,8 @@ class LatticeBoltzmann():
 
     def get_kinetic_energy(self):
         return np.multiply(self.u[:,:,0], self.u[:,:,0]) + np.multiply(self.u[:,:,1], self.u[:,:,1])
+
+    def get_curl(self):
+        dx_uy = (self.u[1:-1,2:,1]-self.u[1:-1,0:-2,1]) / 2
+        dy_ux = (self.u[2:,1:-1,0]-self.u[0:-2,1:-1,0]) / 2
+        return dx_uy - dy_ux

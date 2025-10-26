@@ -25,7 +25,7 @@ class Initializer():
         for e_i, val_i in zip(e, val):
             self.lbm.f[:,:,e_i] = val_i
 
-    def macro_quantities(self):
+    def macro_quantities(self, u0, rho0):
 
         nx = self.lbm.nx
         ny = self.lbm.ny
@@ -33,8 +33,8 @@ class Initializer():
         self.lbm.wall = np.zeros((ny, nx),dtype=int) # wall cells in grid
 
         # Macroscopic density and velocity
-        self.lbm.rho = np.ones((ny, nx))              # density
-        self.lbm.u = np.zeros((ny, nx, self.lbm.D))   # velocity
+        self.lbm.rho = rho0 * np.ones((ny, nx))              # density
+        self.lbm.u = u0 * np.ones((ny, nx, self.lbm.D))   # velocity
 
         # for yi in range(self.ny):
         #     for xi in range(self.nx):
