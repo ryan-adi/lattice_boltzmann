@@ -1,0 +1,4 @@
+matplotlib==3.10.0
+numba==0.62.1
+numpy==2.2.5
+snakeviz==2.2.2
