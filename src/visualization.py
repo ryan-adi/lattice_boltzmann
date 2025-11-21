@@ -16,19 +16,37 @@ def set_colorbar(im, label):
     plt.gca().invert_yaxis()
     cbar.set_label(label, fontweight='bold', labelpad=35, rotation=270)
 
+def axis_limits(var):
+    match var:
+        case "Density":
+            value_min = 0.9
+            value_max = 1.1
+        case "Velocity_X":
+            value_min = 0.0
+            value_max = 0.3
+        case "Velocity_Y":
+            value_min = -0.3
+            value_max = 0.3
+        case "Kinetic_Energy":
+            value_min = 0.0
+            value_max = 0.1
+        case "Scalar":
+            value_min = 0.0
+            value_max = 5.0
+        case _:
+            value_min = None
+            value_max = None
+
+    return value_min, value_max
+
 def create_output_folder(case_name):
     case_pngs = os.path.join("output", case_name, "pngs")
     case_csvs = os.path.join("output", case_name, "csvs")
-
-    if os.path.exists(case_pngs):
-        # if already exist delete case dir
-        case_dir = os.path.join("output", case_name)
-        shutil.rmtree(case_dir)
         
     os.makedirs(case_pngs)
     os.makedirs(case_csvs)
 
-def save_csvs(case_name, current_time, export_iter, ds:dict):
+def save_csvs(case_name, export_iter, ds:dict):
      
     # define main directory
     main_dir = os.getcwd()
@@ -39,7 +57,7 @@ def save_csvs(case_name, current_time, export_iter, ds:dict):
     # create csvs for all variables in ds
     for var, data in ds.items():
 
-        var_name = ''.join([c for c in var if c.isupper()])
+        var_name = var #''.join([c for c in var if c.isupper()])
         csv_name = f"t{export_iter:06d}_{var_name}.csv" 
 
         if not os.path.exists(var_name):
@@ -65,8 +83,8 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
     # define main directory
     main_dir = os.getcwd()
     case_pngs = os.path.join("output", case_name, "pngs")
-    
     os.chdir(case_pngs)
+
     # create pngs for all variables in ds
     for var, data in ds.items():
         fig, ax = plt.subplots(figsize=(20,5))
@@ -79,23 +97,13 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
                 transform=ax.transAxes)
 
         value_min = value_max = 0.0
-        if (var=="Density"):
-            value_min = 0.9
-            value_max = 1.1
-        if (var=="Velocity X"):
-            value_min = 0.0
-            value_max = 0.3
-        if (var=="Velocity y"):
-            value_min = -0.3
-            value_max = 0.3
-        if (var=="Kinetic Energy"):
-            value_min = 0.0
-            value_max = 0.1
+        value_min, value_max = axis_limits(var)
 
+        im = plt.imshow(data,  cmap='viridis')
         im = plt.imshow(data,  vmin=value_min, vmax=value_max, cmap='viridis')
         set_colorbar(im, label=var)
 
-        var_name = ''.join([c for c in var if c.isupper()])
+        var_name = var #''.join([c for c in var if c.isupper()])
         png_name = f"t{export_iter:06d}_{var_name}.png" 
 
         if not os.path.exists(var_name):
@@ -120,7 +128,7 @@ def generate_video(case_name:str, ds:dict, fps:int, remove_pngs=True):
     # call ffmpeg to convert pngs to mp4
     for var, _ in ds.items():
         # file names
-        var_name = ''.join([c for c in var if c.isupper()])
+        var_name = var #''.join([c for c in var if c.isupper()])
         video_name= case_name + "_" + var_name + ".mp4"
         png_name = "t%06d_"+ var_name +".png" 
 

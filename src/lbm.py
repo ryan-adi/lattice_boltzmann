@@ -10,37 +10,37 @@ class LatticeBoltzmann():
         self.D = D
         self.Q = Q
 
-        e_ = np.array([])
+        _e = np.array([])
         w_ = np.array([])
         isInConfiguration = [D,Q] in configuration
         if (isInConfiguration):
             # for D2Q9
-            e_ = np.array([np.array([0.0, 0.0]),
+            _e = np.array([np.array([0.0, 0.0]),
                             np.array([1.0, 0.0]),np.array([0.0, 1.0]),
                             np.array([-1.0, 0.0]),np.array([0.0, -1.0]),
                             np.array([1.0, 1.0]),np.array([-1.0, 1.0]),
                             np.array([-1.0, -1.0]),np.array([1.0, -1.0])])
-            # for e_i in e_[1:]: # normalize vectors
-            #     e_i /= np.sqrt(np.dot(e_i, e_i))
+            # for ei in _e[1:]: # normalize vectors
+            #     ei /= np.sqrt(np.dot(ei, ei))
             w_ = np.array([4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.])
         else:
             print("Error: D and Q configuration not found", file=sys.stderr)
 
         # weights and directions
-        self.e_ = e_
+        self._e = _e
         self.w_ = w_
 
     
     # ================= update ================= #
     def update(self, bc_dict):
 
-        # absorbing boundary condition
-        # self.f[:,-1,[3,6,7]] = self.f[:,-2,[3,6,7]] # right
-        # self.f[:,0,[1,5,8]] = self.f[:,1,[1,5,8]]  # left
-        # self.f[-1,:,[4,7,8]] = self.f[-2,:,[4,7,8]] # top
-        # self.f[0,:,[2,5,6]] = self.f[1,:,[2,5,6]] # bottom
+        # # apply boundary conditions
+        # if (bc_dict):
+        #     for loc, vals in bc_dict.items():
+        #         if (vals):
+        #             self.boundary_condition(loc, vals[0], vals[1])
 
-        stream(self.f, self.e_)
+        stream(self.f, self._e)
         bounce(self.f, self.wall)
 
         # apply boundary conditions
@@ -49,27 +49,27 @@ class LatticeBoltzmann():
                 if (vals):
                     self.boundary_condition(loc, vals[0], vals[1])
 
-        self.collide()
+        # apply corner boundary conditions
+        # self.corner_boundary_condition() 
 
+        self.collide()
 
     def collide(self):
         # create copy of commonly used variables
         w_ = self.w_
-        e_ = self.e_
+        _e = self._e
         u = self.u
         dt = self.dt
         tau = self.tau
 
-        # store original f field
-        f = self.f
-
         # calc macro quantities
-        self.rho = np.sum(f, 2)
-        u = np.einsum("ijk,kl->ijl", f, e_) / self.rho[...,np.newaxis]
+        self.rho = np.sum(self.f, axis=2)
+        u = calc_fe(self.f, _e) / self.rho[...,np.newaxis]
         self.u = u
+        self.scalar = self.f[:,:,0]
 
-        f_eq = np.zeros(f.shape)
-        for i, ei, wi in zip(range(9), e_, w_):
+        f_eq = np.zeros(self.f.shape)
+        for i, ei, wi in zip(range(9), _e, w_):
             cx, cy = ei[0], ei[1]
             f_eq[:,:,i] = wi * self.rho * (1 + 3 * (cx*u[:,:,0] + cy*u[:,:,1]) 
                                     + (3 * (cx*u[:,:,0] + cy*u[:,:,1]))**2 /2
@@ -95,11 +95,11 @@ class LatticeBoltzmann():
             if (location=='left'):
                 bc.pressure_left_bc(val)
             # elif (location=='right'):
-            #     bc.pressure_right_bc(val)
+            #     bc.pressureright_bc(val)
             # elif (location=='top'):
-            #     bc.pressure_top_bc(val)
+            #     bc.pressuretop_bc(val)
             # elif (location=='bottom'):
-            #     bc.pressure_bottom_bc(val)
+            #     bc.pressurebottom_bc(val)
             else :
                 print("BC location not found", file=sys.stderr)
         elif (type=='set'): # set micro velocity BC
@@ -126,6 +126,12 @@ class LatticeBoltzmann():
                 print("BC location not found", file=sys.stderr)
         else:
             print("Boundary condition not defined")
+
+    def corner_boundary_condition(self):
+        bc = BoundaryCondition(self)
+
+        bc.corner_bc()
+
         
     # ================= get macro quantities ================= #
     def get_rho(self):
@@ -141,3 +147,6 @@ class LatticeBoltzmann():
         dx_uy = (self.u[1:-1,2:,1]-self.u[1:-1,0:-2,1]) / 2
         dy_ux = (self.u[2:,1:-1,0]-self.u[0:-2,1:-1,0]) / 2
         return dx_uy - dy_ux
+    
+    def get_scalar(self):
+        return self.scalar

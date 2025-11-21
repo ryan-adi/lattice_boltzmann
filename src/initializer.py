@@ -36,17 +36,6 @@ class Initializer():
         self.lbm.rho = rho0 * np.ones((ny, nx))              # density
         self.lbm.u = u0 * np.ones((ny, nx, self.lbm.D))   # velocity
 
-        # for yi in range(self.ny):
-        #     for xi in range(self.nx):
-
-        #         # init equilibrium distribution
-        #         for qi in range(self.lbm.Q):
-        #             self.f[yi, xi, qi] = self.rho[yi,xi] * self.w_[qi] * (
-        #                 1 + 3 * np.dot(self.u0, self.e_[qi]) 
-        #                 + 4.5 * (np.dot(self.u0, self.e_[qi]))**2 
-        #                 - 1.5 * np.dot(self.u0, self.u0))
-
-        #         # macroscopic values
-        #         self.rho[yi, xi] = np.sum(self.f[yi, xi,:])
-        #         self.u[yi,xi,:] = np.dot(self.f[yi,xi,1:], self.e_[1:]) * (1-(self.rho[yi,xi]-1)+((self.rho[yi,xi]-1)**2))
+        # macroscopic scalar
+        self.lbm.scalar = np.ones((ny, nx))
     

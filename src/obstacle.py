@@ -12,12 +12,17 @@ class Obstacle():
         @param bb_min := min bounding box, index of grid cells that are obstacle
         @param bb_max := max bounding box, index of grid cells that are obstacle
         '''
-        for yi in range(bb_min[1], bb_max[1]+1):
-            for xi in range(bb_min[0], bb_max[0]+1):
-                isInsideX = (xi < self.lbm.nx) & (xi > -1)
-                isInsideY = (yi < self.lbm.ny) & (yi > -1)
-                if (isInsideX & isInsideY):
-                    self.lbm.wall[yi, xi] = 1
+        y_min = max(bb_min[1], 0)
+        y_max = min(bb_max[1], self.lbm.ny-2)+1
+        x_min = max(bb_min[0], 0)
+        x_max = min(bb_max[0], self.lbm.nx-2)+1
+        # inner cells
+        self.lbm.wall[y_min:y_max, x_min:x_max] = 1
+        # boundary cells
+        self.lbm.wall[y_min-1,x_min-1:x_max+1] = 2
+        self.lbm.wall[y_max,x_min-1:x_max+1] = 2
+        self.lbm.wall[y_min-1:y_max+1,x_min-1] = 2
+        self.lbm.wall[y_min-1:y_max+1,x_max] = 2
 
     def create_circle(self, radius:float, center:np.array):
         '''
@@ -27,11 +32,16 @@ class Obstacle():
         '''
         ny = self.lbm.ny
         nx = self.lbm.nx
+
         distance = lambda x, y : np.dot((y-x),(y-x)) 
         for yi in range(ny):
             for xi in range(nx):
                 position = np.array([xi,yi])
-                if ((distance(center, position)) < radius*radius) : 
+                # boundary
+                if ((distance(center, position)) <= (radius+1)**2) : 
+                    self.lbm.wall[yi, xi] = 2
+                # inner 
+                if ((distance(center, position)) <= radius**2) : 
                     self.lbm.wall[yi, xi] = 1 
 
     def move(self, displacement:np.array):
@@ -39,14 +49,28 @@ class Obstacle():
         Move obstacles in a specific direction
         @param displacement := displacement vector
         '''
-
-        self.lbm.wall[:,:] = np.roll(self.lbm.wall[:,:], displacement[0], axis=1)
-        self.lbm.wall[:,:] = np.roll(self.lbm.wall[:,:], displacement[1], axis=0)
-
         q = self.lbm.Q
-        e_ = self.lbm.e_
-        # streaming
-        for i, ei in zip(range(q), e_):
-            cx, cy = ei[0], ei[1]
-            self.lbm.f[:,:,i] = np.roll(self.lbm.f[:,:,i], cx, axis=1)
-            self.lbm.f[:,:,i] = np.roll(self.lbm.f[:,:,i], cy, axis=0)
+        _e = self.lbm._e
+
+        # move wall
+        self.lbm.wall = np.roll(self.lbm.wall[:,:], displacement[1], axis=0)
+        self.lbm.wall = np.roll(self.lbm.wall[:,:], displacement[0], axis=1)
+        
+        # move f
+        for i, ei in zip(range(q), _e):
+            self.lbm.f[:,:,i] = np.roll(self.lbm.f[:,:,i], displacement[0], axis=1)
+            self.lbm.f[:,:,i] = np.roll(self.lbm.f[:,:,i], displacement[1], axis=0)
+
+        # update f on boundaries
+        boundary_idx = self.lbm.wall==2
+        for i in range(1,5):
+            val = max(0, np.dot(displacement, _e[i]))
+            self.lbm.f[:,:,i] += 1.0 * val * boundary_idx
+        for i in range(5,q):
+            val = max(0, np.dot(displacement, _e[i]))
+            self.lbm.f[:,:,i] += 1.0 * val * boundary_idx
+
+        ## collide
+        # f = self.lbm.f
+        # self.rho = np.sum(f, 2)
+        # self.u = np.einsum("ijk,kl->ijl", f, _e) / self.rho[...,np.newaxis]
