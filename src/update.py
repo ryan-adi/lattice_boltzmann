@@ -1,28 +1,14 @@
 from common_modules import np, nb
 
-#@nb.jit(parallel=True, fastmath=True)
-def stream(f, e_):
-    _, _, q = f.shape
-
-    # streaming
-    for i, ei in zip(range(q), e_):
-        cx, cy = ei[0], ei[1]
-        f[:,1:-1,i] = np.roll(f[:,1:-1,i], cx, axis=1)
-        f[:,0,i] = f[:,1,i]
-        f[:,-1,i] = f[:,-2,i]
-        f[1:-1,:,i] = np.roll(f[1:-1,:,i], cy, axis=0)
-        f[0,:,i] = f[1,:,i]
-        f[-1,:,i] = f[-2,:,i]
-
-@nb.jit(parallel=True, fastmath=True) 
+@nb.jit(parallel=True, fastmath=True, cache=True) 
 def bounce(f, wall):
     ny, nx, _ = f.shape
 
-    for yi in range(ny):
-        for xi in range(nx):
+    for yi in nb.prange(ny):
+        for xi in nb.prange(nx):
             
             # If the cell is a wall cell
-            if (wall[yi, xi]):
+            if (wall[yi, xi]==1):
                 
                 # bounce back
                 f[yi+1, xi, 2] = f[yi, xi, 4]
@@ -35,5 +21,33 @@ def bounce(f, wall):
                 f[yi-1, xi-1, 7] = f[yi, xi, 5]
                 
                 # clear f in wall
-                f[yi, xi, :] = 0
+                f[yi, xi, :] = float('nan')
+
+@nb.jit(parallel=True, fastmath=True, cache=True)
+def calc_fe(f, e):
+    ny, nx, _ = f.shape
+    temp = np.zeros((ny,nx,2)) # 2d only
+    for j in nb.prange(ny):
+        for i in range(nx):
+            temp[j,i,0] = np.sum(f[j,i,:] * e[:,0])
+            temp[j,i,1] = np.sum(f[j,i,:] * e[:,1])
     
+    return temp 
+    # return np.einsum("ijk,kl->ijl", self.f, e_) / self.rho[...,np.newaxis]
+
+# serial functions
+def stream(f, e_):
+    _, _, q = f.shape
+
+    # streaming
+    for i, ei in zip(range(q), e_):
+        cx, cy = ei[0], ei[1]
+        f[:,:,i] = np.roll(f[:,:,i], cx, axis=1)
+        f[:,:,i] = np.roll(f[:,:,i], cy, axis=0)
+        # f[:,1:-1,i] = np.roll(f[:,1:-1,i], cx, axis=1)
+        # f[:,0,i] = f[:,1,i]
+        # f[:,-1,i] = f[:,-2,i]
+        # f[1:-1,:,i] = np.roll(f[1:-1,:,i], cy, axis=0)
+        # f[0,:,i] = f[1,:,i]
+        # f[-1,:,i] = f[-2,:,i]
+
