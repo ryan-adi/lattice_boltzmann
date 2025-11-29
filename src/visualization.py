@@ -122,7 +122,7 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
 def generate_video(case_name:str, ds:dict, fps:int, remove_pngs=True):
     # define pngs folder
     main_dir = os.getcwd()
-    case_pngs = os.path.join("output", case_name, "pngs")
+    case_pngs = os.path.join("output", case_name, "visuals")
     os.chdir(case_pngs)
 
     # call ffmpeg to convert pngs to mp4

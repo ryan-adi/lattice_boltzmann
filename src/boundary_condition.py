@@ -169,7 +169,6 @@ class BoundaryCondition():
                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
         
-        
     ### ==================== Set Microscopic Velocity BC ==================== #####
     def set_left_bc(self, f_bc):
         """

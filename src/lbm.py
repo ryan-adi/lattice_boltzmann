@@ -11,7 +11,7 @@ class LatticeBoltzmann():
         self.Q = Q
 
         _e = np.array([])
-        w_ = np.array([])
+        _w = np.array([])
         isInConfiguration = [D,Q] in configuration
         if (isInConfiguration):
             # for D2Q9
@@ -22,13 +22,13 @@ class LatticeBoltzmann():
                             np.array([-1.0, -1.0]),np.array([1.0, -1.0])])
             # for ei in _e[1:]: # normalize vectors
             #     ei /= np.sqrt(np.dot(ei, ei))
-            w_ = np.array([4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.])
+            _w = np.array([4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.])
         else:
             print("Error: D and Q configuration not found", file=sys.stderr)
 
         # weights and directions
         self._e = _e
-        self.w_ = w_
+        self._w = _w
 
     
     # ================= update ================= #
@@ -56,11 +56,11 @@ class LatticeBoltzmann():
 
     def collide(self):
         # create copy of commonly used variables
-        w_ = self.w_
+        _w = self._w
         _e = self._e
         u = self.u
         dt = self.dt
-        tau = self.tau
+        tau = self.relaxationTime
 
         # calc macro quantities
         self.rho = np.sum(self.f, axis=2)
@@ -69,7 +69,7 @@ class LatticeBoltzmann():
         self.scalar = self.f[:,:,0]
 
         f_eq = np.zeros(self.f.shape)
-        for i, ei, wi in zip(range(9), _e, w_):
+        for i, ei, wi in zip(range(9), _e, _w):
             cx, cy = ei[0], ei[1]
             f_eq[:,:,i] = wi * self.rho * (1 + 3 * (cx*u[:,:,0] + cy*u[:,:,1]) 
                                     + (3 * (cx*u[:,:,0] + cy*u[:,:,1]))**2 /2
@@ -125,14 +125,12 @@ class LatticeBoltzmann():
             else :
                 print("BC location not found", file=sys.stderr)
         else:
-            print("Boundary condition not defined")
+            print("No boundary condition defined on "+location)
 
     def corner_boundary_condition(self):
         bc = BoundaryCondition(self)
-
         bc.corner_bc()
 
-        
     # ================= get macro quantities ================= #
     def get_rho(self):
         return self.rho

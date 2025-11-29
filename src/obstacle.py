@@ -6,6 +6,18 @@ class Obstacle():
     def __init__(self, lbm:LatticeBoltzmann):
         self.lbm = lbm
 
+    def create_obstacle(self, obstacle_dict):
+        shape = obstacle_dict["shape"]
+        match shape:
+            case "box":
+                bb_min = obstacle_dict["bb_min"]
+                bb_max = obstacle_dict["bb_max"]
+                self.create_box(bb_min, bb_max)
+            case "circle":
+                radius = obstacle_dict["radius"]
+                center = obstacle_dict["center"]
+                self.create_circle(radius, center)
+
     def create_box(self, bb_min: list[int], bb_max: list[int]):
         '''
         Initialize obstacle cells depending on bounding box definition

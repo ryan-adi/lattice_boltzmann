@@ -4,41 +4,30 @@ import cProfile
 from src.lbm import LatticeBoltzmann
 from src.initializer import Initializer
 from src.obstacle import Obstacle
+from src.xml_reader import XMLReader
 from src.boundary_condition import * 
 from src.postprocess import *
 from src.visualization import *
-
-# simulation settings
-fps = 10
-export_interval = 10
-dt = 1.0
-tSim = 1000.0
-nt = int(tSim / dt)
-case_name = "channel2d"
-
-# Geometry
-grid_size = np.array([100, 50])            # grid dimensions
-nx = grid_size[0]                           # grid width
-ny = grid_size[1]                           # grid height
-
-# fluid properties
-u0 = 0.2
-lbm_properties = {
-    'viscosity': 0.002,                 # viscosity
-    'c': 0.577,                           # lattice velocity
-    'u0': u0 * np.array([1.0, 0.0]),    # initial in-flow velocity (in percentage of c)
-    'rho': 1.0,                         # base density
-    'dt': dt,                           # time step
-    'tau':0.8                           # relaxation time
-}
 
 ## LBM PARAMS (CURRENTLY ONLY FOR D=2)
 D = 2
 Q = 9
 
-def simulation(export_interval:int) -> None:
-
+def simulation() -> None:
+    # simulation timer
     start = time.time()
+
+    # read configuration xml
+    xmlreader = XMLReader()
+    ctrl_params = xmlreader.read("simulation_ctrl.xml")
+
+    # simulation configuration
+    case_name = ctrl_params["caseName"]
+    simsetting = ctrl_params["SimSetting"]
+    export_interval = simsetting["export"]
+    dt = simsetting["dt"]
+    endTime = simsetting["endTime"]
+    nt = int(endTime / dt)
 
     # create results folders
     case_dir = os.path.join("output", case_name)
@@ -46,40 +35,27 @@ def simulation(export_interval:int) -> None:
         shutil.rmtree(case_dir)
     os.makedirs(case_dir)  
     create_output_folder(case_name)
-
+    ctrl_name = "simulation_ctrl.xml"
+    shutil.copyfile(ctrl_name, os.path.join(case_dir, ctrl_name))
+    
     # initialize LatticeBoltzmann
     lb = LatticeBoltzmann(D, Q)
     initializer = Initializer(lb)
-    initializer.physical_quantities(lbm_properties)
-    initializer.grid_quantities(lx=1.0, ly=1.0, nx=nx, ny=ny)
-    initializer.micro_velocities(e=[1,2], val=[1.0,1.0])
-    initializer.macro_quantities(u0=1.0, rho0=1.0)
+    initializer.physical_quantities(ctrl_params["Fluid"])
+    initializer.grid_quantities(ctrl_params["Geometry"])
+    initializer.field_quantities(ctrl_params["InitialConditions"])
 
     ## create obstacles
     obstacle = Obstacle(lb)
-    # obstacle.create_box([nx//3-2,ny//2-10], [nx//3+2,ny//2+10])
-    # obstacle.create_circle(radius=5,center=[nx//3,ny//2])
+    obstacle.create_obstacle(ctrl_params["Obstacle"])
+    #obstacle.create_circle(radius=5,center=[nx//3,ny//2])
 
     # define boundary conditions
-    bc_dict = {"top":[], "bottom":[], "left":[], "right":[]}
-    bc_dict["left"].append('set')
-    bc_dict["left"].append(np.array([3.0,1.0]))
-    # bc_dict["left"].append('absorb')
-    # bc_dict["left"].append([])
-    bc_dict["right"].append('absorb')
-    bc_dict["right"].append([])
-    bc_dict["top"].append('velocity')
-    bc_dict["top"].append(np.array([0.0, 0.0]))
-    bc_dict["bottom"].append('velocity')
-    bc_dict["bottom"].append(np.array([0.0, 0.0]))
-    
+    bc_dict = ctrl_params["BoundaryConditions"]
+
     # postprocessing
     postprocess = Postprocess(lb, case_name)
     postprocess.create_postprocessing_folder()
-
-    # initialize field by running simulation loop for 10 iterations
-    for _ in range(10):
-        lb.update(bc_dict)
 
     ## simulation loop
     for iter in range(nt+1):
@@ -135,7 +111,7 @@ def simulation(export_interval:int) -> None:
     end = time.time()
 
     ## generate videos from pngs
-    generate_video(case_name, ds=ds, fps=fps, remove_pngs=True)
+    generate_video(case_name, ds=ds, fps=simsetting["fps"], remove_pngs=simsetting["removePng"])
 
     print(f"LBM simulation complete in {end-start} s")
 
@@ -143,7 +119,7 @@ if __name__ == "__main__":
     print("Starting simulation.")
 
     ## run code with output
-    simulation(export_interval=export_interval)
+    simulation()
 
     ## profile code (visualize with snakeviz lbm.prof)
     #cProfile.run("simulation(export_interval=100)", "lbm.prof")

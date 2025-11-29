@@ -29,17 +29,26 @@ class Postprocess():
         case_postprocessing = os.path.join("output", self.case_name, "postprocessing")
         os.chdir(case_postprocessing)
 
+        x = np.arange(0, self.lb.ny, 1)
+        y = variable[:, loc]
+
         fig, ax = plt.subplots(figsize=(20,5))
         ax.set_xlabel("x Coordinates")
         ax.set_ylabel(var_name)
         ax.set_xlim(0,self.lb.ny)
         ax.set_ylim(0,0.3)
+        x_mean = np.sum(x*y)/np.sum(y)
+        ax.vlines(x_mean, 0.0, 0.5, "r")
+        # ax.annotate(str(x_mean), xy =(x_mean, 0.25),
+        #      xytext =(x_mean+1, 0.25),
+        #      arrowprops = dict(facecolor ='green',
+        #                        shrink = 0.05),   )
         # timestamp = f"t={self.time:.1f} s"
         # ax.text(0.0, 1.1, timestamp, 
         #         fontsize=23, fontweight='bold',
         #         bbox=dict(facecolor='red', alpha=0.5), 
         #         transform=ax.transAxes)
-        plt.plot(np.linspace(0, self.lb.ny), variable[:, loc])
+        plt.plot(x, y)
 
         png_name = f"slice_{var_name}_{self.iter}.png" 
         fig.savefig(png_name)
@@ -49,4 +58,4 @@ class Postprocess():
 
     def run(self, iter):
         self.iter = iter
-        self.plot_cross_section_value(self.lb.u[:,:,0], loc=self.lb.nx//2)
+        self.plot_cross_section_value(self.lb.u[:,:,0], loc=2)
