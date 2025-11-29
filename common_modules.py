@@ -14,5 +14,3 @@ import matplotlib.cm as cm
 # testing 
 import unittest
 
-
-

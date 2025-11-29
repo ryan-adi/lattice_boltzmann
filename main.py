@@ -1,5 +1,6 @@
 from common_modules import np, time
 import cProfile
+import argparse
 
 from src.lbm import LatticeBoltzmann
 from src.initializer import Initializer
@@ -118,8 +119,13 @@ def simulation() -> None:
 if __name__ == "__main__":
     print("Starting simulation.")
 
-    ## run code with output
-    simulation()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--profile", action='store_true')
+    args = parser.parse_args()
 
-    ## profile code (visualize with snakeviz lbm.prof)
-    #cProfile.run("simulation(export_interval=100)", "lbm.prof")
+    if args.profile:
+        # profile code (visualize with snakeviz lbm.prof)
+        cProfile.run("simulation()", "lbm.prof")
+    else:
+        ## run code with output
+        simulation()
