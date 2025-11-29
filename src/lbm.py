@@ -125,7 +125,8 @@ class LatticeBoltzmann():
             else :
                 print("BC location not found", file=sys.stderr)
         else:
-            print("No boundary condition defined on "+location)
+            pass
+            #print("No boundary condition defined on "+location)
 
     def corner_boundary_condition(self):
         bc = BoundaryCondition(self)
