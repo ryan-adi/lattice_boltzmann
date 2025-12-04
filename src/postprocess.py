@@ -58,4 +58,4 @@ class Postprocess():
 
     def run(self, iter):
         self.iter = iter
-        self.plot_cross_section_value(self.lb.u[:,:,0], loc=2)
+        self.plot_cross_section_value(self.lb.vel[:,:,0], loc=2)

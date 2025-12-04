@@ -26,18 +26,18 @@ class Initializer():
         u0=initFieldConditions["velocity"]
         rho0=initFieldConditions["density"]
 
-        self.lbm.f = np.ones((ny, nx, self.lbm.Q)) + .005 * np.random.randn(ny, nx, self.lbm.Q)
-        for e_i, val_i in zip(e, val):
-            self.lbm.f[:,:,int(e_i)] = val_i
-
         # wall
         self.lbm.wall = np.zeros((ny, nx),dtype=int) # wall cells in grid
 
         # Macroscopic density and velocity
         self.lbm.rho = rho0 * np.ones((ny, nx))                  # density
-        self.lbm.u = np.zeros((ny,nx,self.lbm.D))
-        self.lbm.u[:,:,0] = u0[0] * np.ones((ny, nx))            # velocity in x
-        self.lbm.u[:,:,1] = u0[1] * np.ones((ny, nx))            # velocity in y
+        self.lbm.vel = np.zeros((ny,nx,self.lbm.D))
+        self.lbm.vel[:,:,0] = u0[0] * np.ones((ny, nx))            # velocity in x
+        self.lbm.vel[:,:,1] = u0[1] * np.ones((ny, nx))            # velocity in y
 
-        # macroscopic scalar
-        self.lbm.scalar = np.ones((ny, nx))
+        # get equilibrium distribution
+        self.lbm.f = self.lbm.get_f_eq()
+        # self.lbm.f += .002 * np.random.randn(ny, nx, self.lbm.Q) # induce randomness
+
+
+

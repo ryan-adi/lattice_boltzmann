@@ -40,7 +40,7 @@ def axis_limits(var):
     return value_min, value_max
 
 def create_output_folder(case_name):
-    case_pngs = os.path.join("output", case_name, "pngs")
+    case_pngs = os.path.join("output", case_name, "visuals")
     case_csvs = os.path.join("output", case_name, "csvs")
         
     os.makedirs(case_pngs)
@@ -82,7 +82,7 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
     
     # define main directory
     main_dir = os.getcwd()
-    case_pngs = os.path.join("output", case_name, "pngs")
+    case_pngs = os.path.join("output", case_name, "visuals")
     os.chdir(case_pngs)
 
     # create pngs for all variables in ds
@@ -103,7 +103,7 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
         im = plt.imshow(data,  vmin=value_min, vmax=value_max, cmap='viridis')
         set_colorbar(im, label=var)
 
-        var_name = var #''.join([c for c in var if c.isupper()])
+        var_name = var
         png_name = f"t{export_iter:06d}_{var_name}.png" 
 
         if not os.path.exists(var_name):

@@ -1,12 +1,35 @@
 from common_modules import np, nb
 
+def stream(f, e_):
+    q = len(e_)
+
+    # streaming
+    for qi, ei in zip(range(q), e_):
+        cx, cy = int(ei[0]), int(ei[1])
+
+        f[:,:,qi] = np.roll(f[:,:,qi], cx, axis=1)
+        f[:,:,qi] = np.roll(f[:,:,qi], cy, axis=0)
+
+# # @nb.jit(parallel=True, fastmath=True, cache=True)
+# def stream(f, e_):
+#     ny, nx, q = f.shape
+#     f_old = f.copy()
+
+#     # streaming
+#     for x in range(nx):
+#             for y in range(ny):
+#                 for qi, ei in zip(range(q), e_):
+#                     cx, cy = ei[0], ei[1]
+#                     x2 = int((x + cx + ny) % nx)
+#                     y2 = int((y + cy + ny) % ny)
+#                     f[y2, x2, qi] = f_old[y, x, qi] 
+
 @nb.jit(parallel=True, fastmath=True, cache=True)
 def bounce(f, wall):
     ny, nx, _ = f.shape
 
     for yi in nb.prange(ny):
         for xi in nb.prange(nx):
-
             # If the cell is a wall cell
             if (wall[yi, xi]==1):
 
@@ -26,33 +49,14 @@ def bounce(f, wall):
 @nb.jit(parallel=True, fastmath=True, cache=True)
 def calc_fe(f, e):
     ny, nx, _ = f.shape
-    temp = np.zeros((ny,nx,2)) # 2d only
+    temp = np.zeros((ny,nx,2))
     for j in nb.prange(ny):
         for i in nb.prange(nx):
             temp[j,i,0] = np.sum(f[j,i,:] * e[:,0])
             temp[j,i,1] = np.sum(f[j,i,:] * e[:,1])
-
     return temp
 
-# @nb.jit(parallel=True, fastmath=True, cache=True)
-# def stream(f, e_):
-#     _, _, q = f.shape
 
-#     # streaming
-#     for qi, ei in zip(range(q), e_):
-#         cx, cy = ei[0], ei[1]
-#         for i in range():
-#             for j in range():
 
-##serial functions
-def stream(f, e_):
-    ny, nx, q = f.shape
 
-    # streaming
-    for qi, ei in zip(range(q), e_):
-        cx, cy = int(ei[0]), int(ei[1])
-        central_x = slice(1,nx-1)
-        central_y = slice(1,ny-1)
-
-        f[:,:,qi] = np.roll(f[:,:,qi], cx, axis=1)
-        f[:,:,qi] = np.roll(f[:,:,qi], cy, axis=0)
+   

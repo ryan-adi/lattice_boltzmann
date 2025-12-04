@@ -29,17 +29,48 @@ class LatticeBoltzmann():
         # weights and directions
         self._e = _e
         self._w = _w
-
     
-    # ================= update ================= #
+    # ================= CALC FUNCTIONS ================= #
+
+    def calc_rho(self):
+        self.rho = np.sum(self.f, axis=2)
+
+    def calc_vel(self):
+        self.vel = calc_fe(self.f, self._e) / self.rho[...,np.newaxis]
+
+    def get_f_eq(self):
+        vel = self.vel
+        nx = self.nx
+        ny = self.ny
+        e = self._e
+        w = self._w
+
+        f_eq = np.zeros((ny,nx,self.Q))
+        for qi, ei, wi in zip(range(self.Q), self._e, self._w):
+            cx, cy = ei[0], ei[1]
+            temp = wi * self.rho[:,:] * (1 + 3 * (cx*vel[:,:,0] + cy*vel[:,:,1]) 
+                                    + (3 * (cx*vel[:,:,0] + cy*vel[:,:,1]))**2 / 2
+                                    - 1.5 * (vel[:,:,0]**2+vel[:,:,1]**2))
+            f_eq[:,:,qi] = temp 
+        return f_eq
+
+    # ================= LBM FUNCTIONS ================= #
+
+    def collide(self):
+        # create copy of commonly used variables
+        _w = self._w
+        _e = self._e
+        nx, ny = self.nx, self.ny
+        Q = self.Q
+        dt = self.dt
+        tau = self.relaxationTime
+
+        # update micro velocities
+        f_eq = self.get_f_eq()
+        self.f +=  dt/tau * (-self.f + f_eq)
+
     def update(self, bc_dict):
-
-        # # apply boundary conditions
-        # if (bc_dict):
-        #     for loc, vals in bc_dict.items():
-        #         if (vals):
-        #             self.boundary_condition(loc, vals[0], vals[1])
-
+        # stream & bounce
         stream(self.f, self._e)
         bounce(self.f, self.wall)
 
@@ -50,31 +81,11 @@ class LatticeBoltzmann():
                     self.boundary_condition(loc, vals[0], vals[1])
 
         # apply corner boundary conditions
-        # self.corner_boundary_condition() 
+        self.corner_boundary_condition() 
 
+        self.calc_rho()
+        self.calc_vel()
         self.collide()
-
-    def collide(self):
-        # create copy of commonly used variables
-        _w = self._w
-        _e = self._e
-        u = self.u
-        dt = self.dt
-        tau = self.relaxationTime
-
-        # calc macro quantities
-        self.rho = np.sum(self.f, axis=2)
-        u = calc_fe(self.f, _e) / self.rho[...,np.newaxis]
-        self.u = u
-        self.scalar = self.f[:,:,0]
-
-        f_eq = np.zeros(self.f.shape)
-        for i, ei, wi in zip(range(9), _e, _w):
-            cx, cy = ei[0], ei[1]
-            f_eq[:,:,i] = wi * self.rho * (1 + 3 * (cx*u[:,:,0] + cy*u[:,:,1]) 
-                                    + (3 * (cx*u[:,:,0] + cy*u[:,:,1]))**2 /2
-                                    - 3 * (u[:,:,0]**2+u[:,:,1]**2)/2)
-        self.f +=  - dt/tau * (self.f - f_eq)
 
     # ================= boundary conditions ================= #
     def boundary_condition(self, location, type, val):
@@ -137,15 +148,12 @@ class LatticeBoltzmann():
         return self.rho
 
     def get_velocity(self):
-        return self.u
+        return self.vel
 
     def get_kinetic_energy(self):
-        return np.multiply(self.u[:,:,0], self.u[:,:,0]) + np.multiply(self.u[:,:,1], self.u[:,:,1])
+        return np.multiply(self.vel[:,:,0], self.vel[:,:,0]) + np.multiply(self.vel[:,:,1], self.vel[:,:,1])
 
     def get_curl(self):
-        dx_uy = (self.u[1:-1,2:,1]-self.u[1:-1,0:-2,1]) / 2
-        dy_ux = (self.u[2:,1:-1,0]-self.u[0:-2,1:-1,0]) / 2
+        dx_uy = (self.vel[1:-1,2:,1]-self.vel[1:-1,0:-2,1]) / 2
+        dy_ux = (self.vel[2:,1:-1,0]-self.vel[0:-2,1:-1,0]) / 2
         return dx_uy - dy_ux
-    
-    def get_scalar(self):
-        return self.scalar

@@ -20,7 +20,8 @@ def simulation() -> None:
 
     # read configuration xml
     xmlreader = XMLReader()
-    ctrl_params = xmlreader.read("simulation_ctrl.xml")
+    xmlreader.read("simulation_ctrl.xml")
+    ctrl_params = xmlreader.get()
 
     # simulation configuration
     case_name = ctrl_params["caseName"]
@@ -48,8 +49,8 @@ def simulation() -> None:
 
     ## create obstacles
     obstacle = Obstacle(lb)
-    obstacle.create_obstacle(ctrl_params["Obstacle"])
-    #obstacle.create_circle(radius=5,center=[nx//3,ny//2])
+    if "Obstacle" in ctrl_params.keys():
+        obstacle.create_obstacle(ctrl_params["Obstacle"])
 
     # define boundary conditions
     bc_dict = ctrl_params["BoundaryConditions"]
@@ -60,7 +61,6 @@ def simulation() -> None:
 
     ## simulation loop
     for iter in range(nt+1):
-
         if (iter%export_interval==0):
             print(f"Time = {iter*dt:.2f} s")
 
@@ -70,7 +70,6 @@ def simulation() -> None:
         uy = lb.get_velocity()[:,:,1]
         ke = lb.get_kinetic_energy()
         cu = lb.get_curl()
-        scalar = lb.get_scalar()
 
         # save pngs 
         ds = {
@@ -78,8 +77,7 @@ def simulation() -> None:
               "Velocity_X":ux,
               "Velocity_Y":uy,
               "Kinetic_Energy":ke,
-              "Curl":cu,
-              "Scalar":scalar,
+              #"Curl":cu,
               "F1":lb.f[:,:,1],
               }
     

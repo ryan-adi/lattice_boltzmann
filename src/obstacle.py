@@ -85,4 +85,4 @@ class Obstacle():
         ## collide
         # f = self.lbm.f
         # self.rho = np.sum(f, 2)
-        # self.u = np.einsum("ijk,kl->ijl", f, _e) / self.rho[...,np.newaxis]
+        # self.vel = np.einsum("ijk,kl->ijl", f, _e) / self.rho[...,np.newaxis]

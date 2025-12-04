@@ -26,21 +26,21 @@ class BoundaryCondition():
         bc_cells = (slice(ny0,ny1),0)
 
         self.lb.rho[bc_cells] = val[0]
-        self.lb.u[bc_cells][:,1] = val[1]
+        self.lb.vel[bc_cells][:,1] = val[1]
 
-        self.lb.u[bc_cells][:,0] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,3] + self.lb.f[bc_cells][:,4] +
+        self.lb.vel[bc_cells][:,0] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,3] + self.lb.f[bc_cells][:,4] +
                      2.0*self.lb.f[bc_cells][:,1] + 2.0*self.lb.f[bc_cells][:,5] +
                      2.0*self.lb.f[bc_cells][:,8])/self.lb.rho[bc_cells] - 1.0
 
-        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
+        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0])
 
         self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,5] + c3*(self.lb.f[bc_cells][:,3] - self.lb.f[bc_cells][:,4]) -
-                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
-                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                     c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] -
+                     c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
 
         self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,8] - c3*(self.lb.f[bc_cells][:,3] - self.lb.f[bc_cells][:,4]) -
-                     c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
-                     c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
+                     c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] +
+                     c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1])
 
 
     # ==================== VELOCITY BCs (zou he) ==================== #
@@ -59,29 +59,29 @@ class BoundaryCondition():
 
         bc_cells = (slice(ny0, ny1),0)
 
-        # self.lb.u[bc_cells][:,0] = u_bc[0]
+        self.lb.vel[bc_cells][:,0] = u_bc[0]
         # if poiseuille
         # for j in range(ny0, ny1):
         #     v_poi = u_bc[0] * (1- ((j-ny/2)/(ny-2))**2)
-        #     self.lb.u[j,0,0] = v_poi
+        #     self.lb.vel[j,0,0] = v_poi
 
-        self.lb.u[bc_cells][:,1] = u_bc[1]
+        self.lb.vel[bc_cells][:,1] = u_bc[1]
 
         self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,2] + self.lb.f[bc_cells][:,4] 
                         + 2.0*self.lb.f[bc_cells][:,3] + 2.0*self.lb.f[bc_cells][:,7] 
-                        + 2.0*self.lb.f[bc_cells][:,6])/(1.0 - self.lb.u[bc_cells][:,0])
+                        + 2.0*self.lb.f[bc_cells][:,6])/(1.0 - self.lb.vel[bc_cells][:,0])
         
-        self.lb.f[bc_cells][:,1] = (self.lb.f[bc_cells][:,3] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
+        self.lb.f[bc_cells][:,1] = (self.lb.f[bc_cells][:,3] + c1*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0])
 
         self.lb.f[bc_cells][:,5] = (self.lb.f[bc_cells][:,7] 
                         - c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
-                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
-                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
+                        + c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] 
+                        + c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1])
 
         self.lb.f[bc_cells][:,8] = (self.lb.f[bc_cells][:,6] 
                         + c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
-                        + c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
-                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
+                        + c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] 
+                        - c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1])
 
     ### right velocity BC
     def velocity_right_bc(self, u_bc):
@@ -94,24 +94,24 @@ class BoundaryCondition():
 
         bc_cells = (slice(1,self.lb.ny-1), self.lb.nx-1)
         
-        self.lb.u[bc_cells][:,0] = u_bc[0]
-        self.lb.u[bc_cells][:,1] = u_bc[1]
+        self.lb.vel[bc_cells][:,0] = u_bc[0]
+        self.lb.vel[bc_cells][:,1] = u_bc[1]
 
         self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,2] + self.lb.f[bc_cells][:,4] 
                         + 2.0*self.lb.f[bc_cells][:,1] + 2.0*self.lb.f[bc_cells][:,5] 
-                        + 2.0*self.lb.f[bc_cells][:,8])/(1.0 + self.lb.u[bc_cells][:,0])
+                        + 2.0*self.lb.f[bc_cells][:,8])/(1.0 + self.lb.vel[bc_cells][:,0])
 
-        self.lb.f[bc_cells][:,3] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0])
+        self.lb.f[bc_cells][:,3] = (self.lb.f[bc_cells][:,1] - c1*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0])
 
         self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,5] 
                         + c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
-                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
-                        - c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                        - c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] 
+                        - c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
 
         self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,8] 
                         - c3*(self.lb.f[bc_cells][:,2] - self.lb.f[bc_cells][:,4]) 
-                        - c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] 
-                        + c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                        - c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] 
+                        + c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
         
     ### top velocity BC
     def velocity_top_bc(self, u_bc):
@@ -124,22 +124,22 @@ class BoundaryCondition():
 
         bc_cells = (self.lb.ny-1, slice(1, self.lb.nx-1))
 
-        self.lb.u[bc_cells][:,0] = u_bc[0]
-        self.lb.u[bc_cells][:,1] = u_bc[1]
+        self.lb.vel[bc_cells][:,0] = u_bc[0]
+        self.lb.vel[bc_cells][:,1] = u_bc[1]
 
         self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,1] + self.lb.f[bc_cells][:,3] +
                     2.0*self.lb.f[bc_cells][:,2] + 2.0*self.lb.f[bc_cells][:,5] +
-                    2.0*self.lb.f[bc_cells][:,6])/(1.0 + self.lb.u[bc_cells][:,1])
+                    2.0*self.lb.f[bc_cells][:,6])/(1.0 + self.lb.vel[bc_cells][:,1])
 
-        self.lb.f[bc_cells][:,4] = (self.lb.f[bc_cells][:,2] - c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
+        self.lb.f[bc_cells][:,4] = (self.lb.f[bc_cells][:,2] - c1*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1])
 
         self.lb.f[bc_cells][:,8] = (self.lb.f[bc_cells][:,6] - c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) +
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                    c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] -
+                    c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
 
         self.lb.f[bc_cells][:,7] = (self.lb.f[bc_cells][:,5] + c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) -
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] -
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                    c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] -
+                    c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
 
     ### bottom velocity BC
     def velocity_bottom_bc(self, u_bc):
@@ -152,22 +152,22 @@ class BoundaryCondition():
 
         bc_cells = (0, slice(1, self.lb.nx-1))
 
-        self.lb.u[bc_cells][:,0] = u_bc[0]
-        self.lb.u[bc_cells][:,1] = u_bc[1]
+        self.lb.vel[bc_cells][:,0] = u_bc[0]
+        self.lb.vel[bc_cells][:,1] = u_bc[1]
 
         self.lb.rho[bc_cells] = (self.lb.f[bc_cells][:,0] + self.lb.f[bc_cells][:,1] + self.lb.f[bc_cells][:,3] +
                     2.0*self.lb.f[bc_cells][:,4] + 2.0*self.lb.f[bc_cells][:,7] +
-                    2.0*self.lb.f[bc_cells][:,8] )/(1.0 - self.lb.u[bc_cells][:,1])
+                    2.0*self.lb.f[bc_cells][:,8] )/(1.0 - self.lb.vel[bc_cells][:,1])
 
-        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,4] + c1*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1])
+        self.lb.f[bc_cells][:,2] = (self.lb.f[bc_cells][:,4] + c1*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1])
 
         self.lb.f[bc_cells][:,5] = (self.lb.f[bc_cells][:,7] - c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) +
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                    c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] +
+                    c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
 
         self.lb.f[bc_cells][:,6] = (self.lb.f[bc_cells][:,8] + c3*(self.lb.f[bc_cells][:,1] - self.lb.f[bc_cells][:,3]) -
-                    c3*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,0] +
-                    c2*self.lb.rho[bc_cells]*self.lb.u[bc_cells][:,1] )
+                    c3*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,0] +
+                    c2*self.lb.rho[bc_cells]*self.lb.vel[bc_cells][:,1] )
         
     ### ==================== Set Microscopic Velocity BC ==================== #####
     def set_left_bc(self, f_bc):
@@ -269,34 +269,34 @@ class BoundaryCondition():
     def corner_bc(self):
         # bottom corners
         for idx1, idx2 in [[0,0],[0,-1]]:
-            self.lb.u[idx1,idx2,:] = 0.0
+            self.lb.vel[idx1,idx2,:] = 0.0
             self.lb.rho[idx1,idx2] = (self.lb.f[idx1,idx2,0] + self.lb.f[idx1,idx2,1] + self.lb.f[idx1,idx2,3] +
                     2.0*self.lb.f[idx1,idx2,4] + 2.0*self.lb.f[idx1,idx2,7] +
-                    2.0*self.lb.f[idx1,idx2,8] )/(1.0 - self.lb.u[idx1,idx2,1])
+                    2.0*self.lb.f[idx1,idx2,8] )/(1.0 - self.lb.vel[idx1,idx2,1])
             
-            self.lb.f[idx1, idx2,2] = (self.lb.f[idx1, idx2,4] + c1*self.lb.rho[idx1, idx2]*self.lb.u[idx1, idx2,1])
+            self.lb.f[idx1, idx2,2] = (self.lb.f[idx1, idx2,4] + c1*self.lb.rho[idx1, idx2]*self.lb.vel[idx1, idx2,1])
 
             self.lb.f[idx1, idx2,5] = (self.lb.f[idx1, idx2,7] - c3*(self.lb.f[idx1, idx2,1] - self.lb.f[idx1, idx2,3]) +
-                        c3*self.lb.rho[idx1, idx2]*self.lb.u[idx1, idx2,0] +
-                        c2*self.lb.rho[idx1, idx2]*self.lb.u[idx1, idx2,1] )
+                        c3*self.lb.rho[idx1, idx2]*self.lb.vel[idx1, idx2,0] +
+                        c2*self.lb.rho[idx1, idx2]*self.lb.vel[idx1, idx2,1] )
 
             self.lb.f[idx1, idx2,6] = (self.lb.f[idx1, idx2,8] + c3*(self.lb.f[idx1, idx2,1] - self.lb.f[idx1, idx2,3]) -
-                        c3*self.lb.rho[idx1, idx2]*self.lb.u[idx1, idx2,0] +
-                        c2*self.lb.rho[idx1, idx2]*self.lb.u[idx1, idx2,1] )
+                        c3*self.lb.rho[idx1, idx2]*self.lb.vel[idx1, idx2,0] +
+                        c2*self.lb.rho[idx1, idx2]*self.lb.vel[idx1, idx2,1] )
             
         # top corners    
         for idx1, idx2 in [[-1,0],[-1,-1]]:
-            self.lb.u[idx1,idx2,:] = 0.0
+            self.lb.vel[idx1,idx2,:] = 0.0
             self.lb.rho[idx1,idx2] = (self.lb.f[idx1,idx2,0] + self.lb.f[idx1,idx2,1] + self.lb.f[idx1,idx2,3] +
                     2.0*self.lb.f[idx1,idx2,2] + 2.0*self.lb.f[idx1,idx2,5] +
-                    2.0*self.lb.f[idx1,idx2,6])/(1.0 + self.lb.u[idx1,idx2,1])
+                    2.0*self.lb.f[idx1,idx2,6])/(1.0 + self.lb.vel[idx1,idx2,1])
             
-            self.lb.f[idx1,idx2,4] = (self.lb.f[idx1,idx2,2] - c1*self.lb.rho[idx1,idx2]*self.lb.u[idx1,idx2,1])
+            self.lb.f[idx1,idx2,4] = (self.lb.f[idx1,idx2,2] - c1*self.lb.rho[idx1,idx2]*self.lb.vel[idx1,idx2,1])
 
             self.lb.f[idx1,idx2,8] = (self.lb.f[idx1,idx2,6] - c3*(self.lb.f[idx1,idx2,1] - self.lb.f[idx1,idx2,3]) +
-                        c3*self.lb.rho[idx1,idx2]*self.lb.u[idx1,idx2,0] -
-                        c2*self.lb.rho[idx1,idx2]*self.lb.u[idx1,idx2,1] )
+                        c3*self.lb.rho[idx1,idx2]*self.lb.vel[idx1,idx2,0] -
+                        c2*self.lb.rho[idx1,idx2]*self.lb.vel[idx1,idx2,1] )
 
             self.lb.f[idx1,idx2,7] = (self.lb.f[idx1,idx2,5] + c3*(self.lb.f[idx1,idx2,1] - self.lb.f[idx1,idx2,3]) -
-                        c3*self.lb.rho[idx1,idx2]*self.lb.u[idx1,idx2,0] -
-                        c2*self.lb.rho[idx1,idx2]*self.lb.u[idx1,idx2,1] )
+                        c3*self.lb.rho[idx1,idx2]*self.lb.vel[idx1,idx2,0] -
+                        c2*self.lb.rho[idx1,idx2]*self.lb.vel[idx1,idx2,1] )
