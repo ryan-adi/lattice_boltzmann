@@ -78,7 +78,7 @@ def save_csvs(case_name, export_iter, ds:dict):
     # go to directory where main is
     os.chdir(main_dir)
 
-def save_pngs(case_name, current_time, export_iter, ds:dict):
+def save_pngs(case_name, current_time, export_iter, ds:dict, particles):
     
     # define main directory
     main_dir = os.getcwd()
@@ -106,12 +106,15 @@ def save_pngs(case_name, current_time, export_iter, ds:dict):
         var_name = var
         png_name = f"t{export_iter:06d}_{var_name}.png" 
 
+        # create points in plot
+        particle_pos = particles.get_position()
+        plt.scatter(particle_pos[:,0], particle_pos[:,1], c="red", edgecolors="k")
+
+        # save png
         if not os.path.exists(var_name):
             os.mkdir(var_name)
         os.chdir(var_name)
-
         fig.savefig(png_name)
-        
         os.chdir("..")
 
         plt.close()

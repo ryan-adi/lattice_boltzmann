@@ -4,6 +4,7 @@ import argparse
 
 from src.lbm import LatticeBoltzmann
 from src.initializer import Initializer
+from src.particles import Particles
 from src.obstacle import Obstacle
 from src.xml_reader import XMLReader
 from src.boundary_condition import * 
@@ -52,6 +53,13 @@ def simulation() -> None:
     if "Obstacle" in ctrl_params.keys():
         obstacle.create_obstacle(ctrl_params["Obstacle"])
 
+    ## Particles
+    y_1d = np.arange(2,48,1)
+    x_1d = np.linspace(10,20,2)
+    xy = np.array([[x,y] for x in x_1d for y in y_1d])
+    pos_0 = np.array([[10,10],[20,20],[30,30]])
+    particles = Particles(xy, lb.nx, lb.ny)
+
     # define boundary conditions
     bc_dict = ctrl_params["BoundaryConditions"]
 
@@ -78,13 +86,12 @@ def simulation() -> None:
               "Velocity_Y":uy,
               "Kinetic_Energy":ke,
               #"Curl":cu,
-              "F1":lb.f[:,:,1],
               }
     
         # output visualization
         if (iter%export_interval==0): 
             save_pngs(case_name, current_time = iter*dt, 
-                      export_iter=iter//export_interval, ds=ds)
+                      export_iter=iter//export_interval, ds=ds, particles=particles)
             save_csvs(case_name, export_iter=iter//export_interval, ds=ds)
             
             # postprocessing
@@ -92,20 +99,7 @@ def simulation() -> None:
         
         # LBM update
         lb.update(bc_dict)
-
-        # change f3 
-        # if (iter%1==0 & iter<50):
-        #     slc1 = slice(ny//2-10, ny//2+10)
-        #     slc2 = slice(nx//3-2+iter//1, nx//3+2+iter//1)
-        #     lb.f[slc1,slc2,1] += 0.1
-        # move obstacles
-        # if (iter==10):
-        #     obstacle.move([0,1])
-        # f = 1.0
-        # if (iter%export_interval==0):
-        #     direction =  4 * np.floor(f*iter/export_interval) - 2 * np.floor(2*f*iter/export_interval) + 1
-        #     displacement = np.array([1, 0]) * direction
-        #     obstacle.move(displacement)
+        particles.update(lb.vel)        
 
     end = time.time()
 
