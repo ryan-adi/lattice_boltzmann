@@ -1,17 +1,33 @@
 from common_modules import np
 
 def isInside(x, xmin, xmax):
-        return (xmin<x) & (x<xmax)
+        return (xmin+1<x) & (x<xmax-1)
 
 class Particles:
     '''Defines class for particles that move w.r.t. flow field but doesn't interact with each other.'''
-    def __init__(self, pos_0:np.array, xmax, ymax):
-        self.position = pos_0.astype(float)
-        self.n_p = pos_0.shape[0]
-        self.xmin = 1
-        self.ymin = 1
-        self.xmax = xmax-1
-        self.ymax = ymax-1
+    def __init__(self, x_bound:list, y_bound:list):
+        self.position = np.array([])
+        self.xmin = x_bound[0]
+        self.ymin = y_bound[0]
+        self.xmax = x_bound[1]
+        self.ymax = y_bound[1]
+
+    def initialize(self, params:dict):
+        for key, val in params.items():
+            if key=="spawnLinear":
+                for i in range(val.shape[0]):
+                    x_seq = val[i][:3]
+                    y_seq = val[i][3:]
+                    self.spawn_grid(x_seq, y_seq)
+
+    def spawn_grid(self, x_seq:list, y_seq:list):
+        y_1d = np.arange(y_seq[0], y_seq[1], y_seq[2])
+        x_1d = np.arange(x_seq[0], x_seq[1], x_seq[2])
+        xy = np.array([[x,y] for x in x_1d for y in y_1d], dtype=float)
+        if self.position.size==0:
+            self.position = xy
+        else:
+            self.position = np.concatenate((self.position, xy), axis=0)
 
     def calc_position(self, u_field):
         for pi in range(self.position.shape[0]):
@@ -29,7 +45,6 @@ class Particles:
         mask = isInside(temp[:,0], self.xmin, self.xmax) & isInside(temp[:,1], self.ymin, self.ymax)
         temp = temp[mask]
         self.position = temp
-      
 
     def update(self, u_field):
         self.calc_position(u_field)
@@ -40,4 +55,4 @@ class Particles:
         return self.position
     
     def get_n_particles(self):
-        return self.n_p
+        return self.position.shape[0]

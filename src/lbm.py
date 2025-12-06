@@ -31,7 +31,6 @@ class LatticeBoltzmann():
         self._w = _w
     
     # ================= CALC FUNCTIONS ================= #
-
     def calc_rho(self):
         self.rho = np.sum(self.f, axis=2)
 
@@ -81,7 +80,7 @@ class LatticeBoltzmann():
                     self.boundary_condition(loc, vals[0], vals[1])
 
         # apply corner boundary conditions
-        self.corner_boundary_condition() 
+        # self.corner_boundary_condition() 
 
         self.calc_rho()
         self.calc_vel()

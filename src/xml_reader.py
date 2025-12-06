@@ -27,13 +27,21 @@ class XMLReader():
                         attr_data = np.fromstring(xml_subtag.text, dtype=float, sep=" ")
                         self.ctrl_params[tag][subtag] = [bc_type, attr_data]
             else:
-                subtags = [child.tag for child in xml_tag]
-                for subtag in subtags:
-                    xml_subtag = xml_tag.find(subtag)
+                tag_iter = xml_tag.iter()
+                next(tag_iter)
+                for elem in tag_iter:
+                    xml_subtag = elem
+                    subtag = elem.tag
+
                     datatype = xml_subtag.get("type")
                     if datatype=="np.array":
                         number_type = xml_subtag.get("number")
-                        self.ctrl_params[tag][subtag] = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
+                        if subtag not in self.ctrl_params[tag]:
+                            self.ctrl_params[tag][subtag] = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
+                        else:
+                            first = self.ctrl_params[tag][subtag]
+                            second = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
+                            self.ctrl_params[tag][subtag] = np.stack([first, second], axis=0)
                     else:    
                         self.ctrl_params[tag][subtag] = eval(datatype)(xml_subtag.text)
 

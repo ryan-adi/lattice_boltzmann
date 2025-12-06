@@ -54,11 +54,8 @@ def simulation() -> None:
         obstacle.create_obstacle(ctrl_params["Obstacle"])
 
     ## Particles
-    y_1d = np.arange(2,48,1)
-    x_1d = np.linspace(10,20,2)
-    xy = np.array([[x,y] for x in x_1d for y in y_1d])
-    pos_0 = np.array([[10,10],[20,20],[30,30]])
-    particles = Particles(xy, lb.nx, lb.ny)
+    particles = Particles(x_bound=[0,lb.nx], y_bound=[0,lb.ny])
+    particles.initialize(ctrl_params["Particles"])
 
     # define boundary conditions
     bc_dict = ctrl_params["BoundaryConditions"]

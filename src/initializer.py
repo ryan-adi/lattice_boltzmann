@@ -20,11 +20,10 @@ class Initializer():
     def field_quantities(self, initFieldConditions):
         nx = self.lbm.nx
         ny = self.lbm.ny
-
-        e=initFieldConditions["microVelDir"]
-        val=initFieldConditions["microVelVal"]
+    
         u0=initFieldConditions["velocity"]
         rho0=initFieldConditions["density"]
+        random=initFieldConditions["random"]
 
         # wall
         self.lbm.wall = np.zeros((ny, nx),dtype=int) # wall cells in grid
@@ -37,7 +36,5 @@ class Initializer():
 
         # get equilibrium distribution
         self.lbm.f = self.lbm.get_f_eq()
-        # self.lbm.f += .002 * np.random.randn(ny, nx, self.lbm.Q) # induce randomness
-
-
-
+        if random:
+            self.lbm.f += .002 * np.random.randn(ny, nx, self.lbm.Q) # induce randomness
