@@ -1,0 +1,56 @@
+<data caseName="channel2d_with_particles">
+    <SimSetting>
+        <fps type="int">10</fps>
+        <export type="int">100</export>
+        <dt type="float">1.0</dt>
+        <endTime type="float">5000.0</endTime>
+        <removePng type="int">1</removePng>
+    </SimSetting>
+
+    <Geometry>
+        <lx type="float">1.0</lx>
+        <ly type="float">1.0</ly>
+        <nx type="int">300</nx>
+        <ny type="int">100</ny>
+    </Geometry>
+
+    <!--
+    <Obstacle>
+        <shape type="str">box</shape>
+        <bb_min type="np.array" number="int">18 22</bb_min>
+        <bb_max type="np.array" number="int">22 28</bb_max>
+    </Obstacle>
+    -->
+
+    <Obstacle>
+        <shape type="str">circle</shape>
+        <radius type="int">10</radius>
+        <center type="np.array" number="int">30 50</center>
+    </Obstacle>
+
+    <Particles>
+        <spawnLinear type="np.array" number="int">5 6 1 10 80 3</spawnLinear>
+        <spawnLinear type="np.array" number="int">10 11 1 10 80 3</spawnLinear>
+    </Particles>
+    
+    <Fluid>
+        <viscosity type="float">0.002</viscosity>
+        <speedOfSound type="float">0.577</speedOfSound> <!-- c=dx/dt=1; cs=c/sqrt(3)-->
+        <density type="float">1.0</density>
+        <dt type="float">1.0</dt>
+        <relaxationTime type="float">.55</relaxationTime>
+    </Fluid>
+
+    <InitialConditions>
+        <velocity type="np.array" number="float">0.18 0.0</velocity>
+        <density type="float">1.0</density>
+        <random type="bool">1</random>
+    </InitialConditions>
+
+    <BoundaryConditions>
+        <left type="none"></left>
+        <right type="none"></right>
+        <top type="none"></top>
+        <bottom type="none"></bottom>
+    </BoundaryConditions>
+</data>
