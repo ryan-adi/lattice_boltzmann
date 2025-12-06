@@ -52,10 +52,11 @@ def simulation() -> None:
     obstacle = Obstacle(lb)
     if "Obstacle" in ctrl_params.keys():
         obstacle.create_obstacle(ctrl_params["Obstacle"])
-
+ 
     ## Particles
     particles = Particles(x_bound=[0,lb.nx], y_bound=[0,lb.ny])
-    particles.initialize(ctrl_params["Particles"])
+    if "Particles" in ctrl_params.keys():
+        particles.initialize(ctrl_params["Particles"])
 
     # define boundary conditions
     bc_dict = ctrl_params["BoundaryConditions"]
@@ -96,7 +97,8 @@ def simulation() -> None:
         
         # LBM update
         lb.update(bc_dict)
-        particles.update(lb.vel)        
+        if particles.get_n_particles():
+            particles.update(lb.vel)        
 
     end = time.time()
 

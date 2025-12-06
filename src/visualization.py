@@ -22,7 +22,7 @@ def axis_limits(var):
             value_min = 0.9
             value_max = 1.1
         case "Velocity_X":
-            value_min = 0.0
+            value_min = -0.3
             value_max = 0.3
         case "Velocity_Y":
             value_min = -0.3
@@ -108,7 +108,8 @@ def save_pngs(case_name, current_time, export_iter, ds:dict, particles):
 
         # create points in plot
         particle_pos = particles.get_position()
-        plt.scatter(particle_pos[:,0], particle_pos[:,1], c="red", edgecolors="k")
+        if particle_pos.size:
+            plt.scatter(particle_pos[:,0], particle_pos[:,1], c="red", edgecolors="k")
 
         # save png
         if not os.path.exists(var_name):
