@@ -17,7 +17,13 @@ class XMLReader():
 
             if tag=="BoundaryConditions":
                 subtags = [child.tag for child in xml_tag]
-                for subtag in subtags:
+                if "corner" in subtags:
+                    self.ctrl_params[tag]["corner"] = int(xml_tag.find("corner").text)
+                else:
+                    self.ctrl_params[tag]["corner"] = 0
+
+                bc_loc = ["left", "right", "top", "bottom"]
+                for subtag in bc_loc:
                     xml_subtag = xml_tag.find(subtag)
                     bc_type = xml_subtag.get("type")
                     if xml_subtag.text==None:
@@ -53,12 +59,6 @@ class XMLReader():
                     if datatype=="np.array":
                         number_type = xml_subtag.get("number")
                         self.ctrl_params[tag][subtag] = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
-                        # if subtag not in self.ctrl_params[tag]:
-                        #     self.ctrl_params[tag][subtag] = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
-                        # else:
-                        #     first = self.ctrl_params[tag][subtag]
-                        #     second = np.fromstring(xml_subtag.text, dtype=number_type, sep=" ")
-                        #     self.ctrl_params[tag][subtag] = np.stack([first, second], axis=0)
                     else:    
                         self.ctrl_params[tag][subtag] = eval(datatype)(xml_subtag.text)
 

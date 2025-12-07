@@ -106,14 +106,16 @@ class LatticeBoltzmann():
         bounce(self.f, self.wall)
 
         # apply boundary conditions
-        if (bc_dict):
-            for loc, vals in bc_dict.items():
-                if (vals):
-                    self.boundary_condition(loc, vals[0], vals[1])
+        bc_loc = ["left", "right", "top", "bottom"]
+        for loc in bc_loc:
+            vals = bc_dict[loc]
+            if (vals):
+                self.boundary_condition(loc, vals[0], vals[1])
 
         # apply corner boundary conditions
-        # self.corner_boundary_condition() 
-
+        if (bc_dict["corner"]):
+            self.corner_boundary_condition() 
+            
         self.calc_rho()
         self.calc_vel()
         self.collide()
