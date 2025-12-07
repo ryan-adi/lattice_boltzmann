@@ -40,9 +40,11 @@ def simulation() -> None:
     shutil.copyfile(ctrl_name, os.path.join(case_dir, ctrl_name))
     
     # initialize LatticeBoltzmann
-    lbm = Multiphase(D, Q)
+    lbm = LatticeBoltzmann(D, Q)
+    if "Multiphase" in ctrl_params.keys():
+        lbm = Multiphase(D,Q)
+        lbm.init_multiphase_components(ctrl_params["Multiphase"])
     lbm.init_physical_quantities(ctrl_params["Fluid"])
-    lbm.init_multiphase_components(ctrl_params["Multiphase"])
     lbm.init_grid_quantities(ctrl_params["Geometry"])
     lbm.init_field_quantities(ctrl_params["InitialConditions"])
 
@@ -84,7 +86,7 @@ def simulation() -> None:
         # output visualization
         if (iter%export_interval==0): 
             visualization.save_pngs(current_time = iter*dt, 
-                      export_iter=iter//export_interval, ds=ds, particles=particles, cmap="turbo")
+                      export_iter=iter//export_interval, ds=ds, particles=particles)
             visualization.save_csvs(export_iter=iter//export_interval, ds=ds)
             
             # postprocessing
