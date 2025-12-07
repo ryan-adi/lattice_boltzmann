@@ -3,7 +3,7 @@
         <fps type="int">10</fps>
         <export type="int">100</export>
         <dt type="float">1.0</dt>
-        <endTime type="float">10000.0</endTime>
+        <endTime type="float">2000.0</endTime>
         <removePng type="int">1</removePng>
     </SimSetting>
 
@@ -14,11 +14,11 @@
         <ny type="int">100</ny>
     </Geometry>
 
-    <Obstacle>
+    <!-- <Obstacle>
         <shape type="str">circle</shape>
         <radius type="int">10</radius>
         <center type="np.array" number="int">25 50</center>
-    </Obstacle>
+    </Obstacle> -->
     
     <Fluid>
         <viscosity type="float">0.002</viscosity>
@@ -29,17 +29,17 @@
     </Fluid>
 
     <InitialConditions>
-        <velocity type="np.array" number="float">0.1 0.0</velocity>
+        <velocity type="np.array" number="float">0.2 0.0</velocity>
         <density type="float">1.0</density>
-        <random type="int">1</random>
+        <random type="int">0</random>
     </InitialConditions>
 
     <BoundaryConditions>
-        <corner type="int">0</corner>
+        <corner type="int">1</corner>
         <left type="none"></left>
         <right type="none"></right>
-        <top type="none"></top>
-        <bottom type="none"></bottom>
+        <top type="velocity">0.0 0.0</top>
+        <bottom type="velocity">0.0 0.0</bottom>
     </BoundaryConditions>
 
     <Visualization>
