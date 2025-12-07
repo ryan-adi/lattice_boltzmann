@@ -3,7 +3,7 @@ from common_modules import np
 def isInside(x, xmin, xmax):
         return (xmin+1<x) & (x<xmax-1)
 
-class Particles:
+class Particles():
     '''Defines class for particles that move w.r.t. flow field but doesn't interact with each other.'''
     def __init__(self, x_bound:list, y_bound:list):
         self.position = np.array([])
@@ -14,16 +14,34 @@ class Particles:
 
     def initialize(self, params:dict):
         for key, val in params.items():
-            if key=="spawnLinear":
+            if key=="spawnGrid":
                 for i in range(val.shape[0]):
                     x_seq = val[i][:3]
                     y_seq = val[i][3:]
                     self.spawn_grid(x_seq, y_seq)
+            elif key=="spawnCircular":
+                for i in range(val.shape[0]):
+                    n_particle = val[i][0]
+                    radius = val[i][1]
+                    center = val[i][2:]
+                    self.spawn_circular(n_particle, radius, center)
+            else:
+                Warning("Spawning method not found.")
 
     def spawn_grid(self, x_seq:list, y_seq:list):
         y_1d = np.arange(y_seq[0], y_seq[1], y_seq[2])
         x_1d = np.arange(x_seq[0], x_seq[1], x_seq[2])
         xy = np.array([[x,y] for x in x_1d for y in y_1d], dtype=float)
+        if self.position.size==0:
+            self.position = xy
+        else:
+            self.position = np.concatenate((self.position, xy), axis=0)
+
+    def spawn_circular(self, n_particle, radius, center:list):
+        theta = np.linspace(0, 359.999, n_particle) * np.pi / 2
+        x_coord = radius * np.cos(theta) + center[0]
+        y_coord = radius * np.sin(theta) + center[1]
+        xy = np.stack([x_coord, y_coord]).T
         if self.position.size==0:
             self.position = xy
         else:
