@@ -1,17 +1,17 @@
-from common_modules import np, time
+from common_modules import *
 import cProfile
 import argparse
 
 from src.lbm import LatticeBoltzmann
-from src.initializer import Initializer
 from src.particles import Particles
 from src.obstacle import Obstacle
+from src.multiphase import Multiphase
 from src.xml_reader import XMLReader
-from src.boundary_condition import * 
-from src.postprocess import *
-from src.visualization import *
+from src.boundary_condition import BoundaryCondition
+from src.postprocess import Postprocess
+from src.visualization import Visualization
 
-## LBM PARAMS (CURRENTLY ONLY FOR D=2)
+## LBM PARAMS
 D = 2
 Q = 9
 
@@ -26,10 +26,9 @@ def simulation() -> None:
 
     # simulation configuration
     case_name = ctrl_params["caseName"]
-    simsetting = ctrl_params["SimSetting"]
-    export_interval = simsetting["export"]
-    dt = simsetting["dt"]
-    endTime = simsetting["endTime"]
+    export_interval = ctrl_params["SimSetting"]["export"]
+    dt = ctrl_params["SimSetting"]["dt"]
+    endTime = ctrl_params["SimSetting"]["endTime"]
     nt = int(endTime / dt)
 
     # create results folders
@@ -37,32 +36,36 @@ def simulation() -> None:
     if os.path.exists(case_dir):
         shutil.rmtree(case_dir)
     os.makedirs(case_dir)  
-    create_output_folder(case_name)
     ctrl_name = "simulation_ctrl.xml"
     shutil.copyfile(ctrl_name, os.path.join(case_dir, ctrl_name))
     
     # initialize LatticeBoltzmann
-    lb = LatticeBoltzmann(D, Q)
-    initializer = Initializer(lb)
-    initializer.physical_quantities(ctrl_params["Fluid"])
-    initializer.grid_quantities(ctrl_params["Geometry"])
-    initializer.field_quantities(ctrl_params["InitialConditions"])
-
-    ## create obstacles
-    obstacle = Obstacle(lb)
-    if "Obstacle" in ctrl_params.keys():
-        obstacle.create_obstacle(ctrl_params["Obstacle"])
- 
-    ## Particles
-    particles = Particles(x_bound=[0,lb.nx], y_bound=[0,lb.ny])
-    if "Particles" in ctrl_params.keys():
-        particles.initialize(ctrl_params["Particles"])
+    lbm = Multiphase(D, Q)
+    lbm.init_physical_quantities(ctrl_params["Fluid"])
+    lbm.init_multiphase_components(ctrl_params["Multiphase"])
+    lbm.init_grid_quantities(ctrl_params["Geometry"])
+    lbm.init_field_quantities(ctrl_params["InitialConditions"])
 
     # define boundary conditions
     bc_dict = ctrl_params["BoundaryConditions"]
 
+    ## create obstacles
+    obstacle = Obstacle(lbm)
+    if "Obstacle" in ctrl_params.keys():
+        obstacle.create_obstacle(ctrl_params["Obstacle"])
+ 
+    ## Particles
+    particles = Particles(x_bound=[0,lbm.nx], y_bound=[0,lbm.ny])
+    if "Particles" in ctrl_params.keys():
+        particles.initialize(ctrl_params["Particles"])
+
+    # Visualization
+    ctrl_params["Visualization"]["CaseName"] = case_name
+    visualization = Visualization(lbm, ctrl_params["Visualization"])
+    visualization.create_output_folder()
+
     # postprocessing
-    postprocess = Postprocess(lb, case_name)
+    postprocess = Postprocess(lbm, case_name)
     postprocess.create_postprocessing_folder()
 
     ## simulation loop
@@ -70,40 +73,32 @@ def simulation() -> None:
         if (iter%export_interval==0):
             print(f"Time = {iter*dt:.2f} s")
 
-        # get macro quantities
-        rho = lb.get_rho()
-        ux = lb.get_velocity()[:,:,0]
-        uy = lb.get_velocity()[:,:,1]
-        ke = lb.get_kinetic_energy()
-        cu = lb.get_curl()
-
         # save pngs 
         ds = {
-              "Density":rho, 
-              "Velocity_X":ux,
-              "Velocity_Y":uy,
-              "Kinetic_Energy":ke,
-              #"Curl":cu,
+              "Density":lbm.get_rho(), 
+              "Velocity_X":lbm.get_velocity()[:,:,0],
+              "Velocity_Y":lbm.get_velocity()[:,:,1],
+              "Kinetic_Energy":lbm.get_kinetic_energy(),
               }
     
         # output visualization
         if (iter%export_interval==0): 
-            save_pngs(case_name, current_time = iter*dt, 
-                      export_iter=iter//export_interval, ds=ds, particles=particles)
-            save_csvs(case_name, export_iter=iter//export_interval, ds=ds)
+            visualization.save_pngs(current_time = iter*dt, 
+                      export_iter=iter//export_interval, ds=ds, particles=particles, cmap="turbo")
+            visualization.save_csvs(export_iter=iter//export_interval, ds=ds)
             
             # postprocessing
             postprocess.run(iter)
         
         # LBM update
-        lb.update(bc_dict)
+        lbm.update(bc_dict)
         if particles.get_n_particles():
-            particles.update(lb.vel)        
+            particles.update(lbm.vel)        
 
     end = time.time()
 
     ## generate videos from pngs
-    generate_video(case_name, ds=ds, fps=simsetting["fps"], remove_pngs=simsetting["removePng"])
+    visualization.generate_video(ds=ds, fps=ctrl_params["SimSetting"]["fps"], remove_pngs=ctrl_params["SimSetting"]["removePng"])
 
     print(f"LBM simulation complete in {end-start} s")
 

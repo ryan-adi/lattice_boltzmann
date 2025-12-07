@@ -20,8 +20,6 @@ class LatticeBoltzmann():
                             np.array([-1.0, 0.0]),np.array([0.0, -1.0]),
                             np.array([1.0, 1.0]),np.array([-1.0, 1.0]),
                             np.array([-1.0, -1.0]),np.array([1.0, -1.0])])
-            # for ei in _e[1:]: # normalize vectors
-            #     ei /= np.sqrt(np.dot(ei, ei))
             _w = np.array([4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.])
         else:
             print("Error: D and Q configuration not found", file=sys.stderr)
@@ -29,6 +27,40 @@ class LatticeBoltzmann():
         # weights and directions
         self._e = _e
         self._w = _w
+
+    # ================= INITIALIZER ================= #
+    def init_physical_quantities(self, data: dict):
+        keys = ["viscosity", "speedOfSound", "u0", "dt", "density", "relaxationTime"]  # Define necessary keys
+        for key in keys:
+            setattr(self, key, data.get(key))
+
+    def init_grid_quantities(self, geometry:dict):
+        self.lx = geometry["lx"]  # length in x
+        self.ly = geometry["ly"]  # length in y
+        self.nx = geometry["nx"]  # number of cells in x
+        self.ny = geometry["ny"]  # number of cells in y
+
+    def init_field_quantities(self, initFieldConditions:dict):
+        nx = self.nx
+        ny = self.ny
+    
+        u0 = initFieldConditions["velocity"]
+        rho0 = initFieldConditions["density"]
+        random = initFieldConditions["random"]
+
+        # wall
+        self.wall = np.zeros((ny, nx),dtype=int) # wall cells in grid
+
+        # Macroscopic density and velocity
+        self.rho = rho0 * np.ones((ny, nx))                  # density
+        self.vel = np.zeros((ny,nx,self.D))
+        self.vel[:,:,0] = u0[0] * np.ones((ny, nx))            # velocity in x
+        self.vel[:,:,1] = u0[1] * np.ones((ny, nx))            # velocity in y
+
+        # get equilibrium distribution
+        self.f = self.get_f_eq()
+        if random:
+            self.f += .002 * np.random.randn(ny, nx, self.Q) # induce randomness
     
     # ================= CALC FUNCTIONS ================= #
     def calc_rho(self):
