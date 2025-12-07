@@ -1,0 +1,57 @@
+<data caseName="multiphase">
+    <SimSetting>
+        <fps type="int">10</fps>
+        <export type="int">50</export>
+        <dt type="float">1.0</dt>
+        <endTime type="float">2000.0</endTime>
+        <removePng type="int">1</removePng>
+    </SimSetting>
+
+    <Geometry>
+        <lx type="float">1.0</lx>
+        <ly type="float">1.0</ly>
+        <nx type="int">300</nx>
+        <ny type="int">300</ny>
+    </Geometry>
+
+    <!--
+    <Obstacle>
+        <shape type="str">circle</shape>
+        <radius type="int">3</radius>
+        <center type="np.array" number="int">50 50</center>
+    </Obstacle>
+    -->
+    
+    <Fluid>
+        <viscosity type="float">0.002</viscosity>
+        <speedOfSound type="float">0.577</speedOfSound> 
+        <density type="float">1.0</density>
+        <dt type="float">1.0</dt>
+        <relaxationTime type="float">.55</relaxationTime>
+    </Fluid>
+
+    <Multiphase>
+        <config type="int">3</config>
+        <n_fluid type="int">1</n_fluid>
+        <radius type="int">15</radius>
+        <relaxationTime type="np.array" number="float">1.0</relaxationTime>
+        <g_coeff type="np.array" number="float">-4.7</g_coeff>
+    </Multiphase>
+    
+    <InitialConditions>
+        <velocity type="np.array" number="float">0.0 0.0</velocity>
+        <density type="float">1.0</density>
+        <random type="bool">1</random>
+    </InitialConditions>
+
+    <BoundaryConditions>
+        <left type="none"></left>
+        <right type="none"></right>
+        <top type="none"></top>
+        <bottom type="none"></bottom>
+    </BoundaryConditions>
+
+    <Visualization>
+        <figSize type="np.array" number="int">10 10</figSize>
+    </Visualization>
+</data>
